@@ -10,6 +10,18 @@
 - **해설**: 2026년 제2회 국어·사회·한국사·도덕 (계속 추가 예정)
 - **기출 DB 관리**: JSON·간편 텍스트로 문항 직접 추가
 
+## 교재 실전모의고사 (개인 학습용, 저장소에 없음)
+
+갖고 있는 교재를 사진으로 찍어 `모의고사.Zip`으로 두면 문항·해설 이미지로 만들어 앱에서 함께 풀 수 있습니다.
+시중 교재는 저작물이라 `book/`과 zip 파일은 `.gitignore`로 저장소에서 제외됩니다.
+
+```
+powershell -ExecutionPolicy Bypass -File tools/ocr_windows.ps1 -InDir <압축 푼 사진 폴더> -OutDir book/ocr   # Windows 한국어 OCR
+python tools/build_book.py 모의고사.Zip                                                                     # 문항·해설 이미지 + book/questions.js
+```
+
+사진 순서와 회차·과목·쪽의 대응, 정답표는 `tools/build_book.py`의 `page_table`·`ANSWERS`에 있습니다(다른 교재는 이 부분을 바꿔야 함).
+
 ## 폴더 구성
 
 | 경로 | 내용 |

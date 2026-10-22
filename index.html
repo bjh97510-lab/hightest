@@ -321,13 +321,16 @@ table.ansgrid{border-collapse:collapse;width:100%;font-size:9.5pt;table-layout:f
       <div class="opt-cards" id="methodCards">
         <button class="ocard on" data-method="random"><b>🎲 AI 무한 랜덤 모의고사</b><span>전체 기출 DB에서 무작위 추출해 신규 1회분 조합 (지문 세트는 묶어서 출제)</span></button>
         <button class="ocard" data-method="official"><b>📄 공식 기출 원본 시험지</b><span>2018~2026년 실제 시험지 PDF를 보며 OMR 마킹 → 공식 정답표로 자동 채점</span></button>
+        <button class="ocard" data-method="book" id="bookCard"><b>📘 교재 실전모의고사</b><span>『검정고시 고졸 만점 뽀개기 실전모의고사』 4·5회 (사진에 있는 문항·해설)</span></button>
         <button class="ocard" data-method="round"><b>📅 DB 회차 풀기</b><span>텍스트 DB에 등록된 회차를 해설과 함께 응시</span></button>
       </div>
       <div class="row" id="scopeRow" style="margin-top:12px">
         <label class="field">랜덤 출제 범위
           <select id="scopeSel" style="min-width:300px">
             <option value="official">공식 기출 문항 (2018~2026 실제 시험지에서 무작위)</option>
-            <option value="all">공식 기출 + 샘플·직접 추가 문항</option>
+            <option value="off_book" data-book>공식 기출 + 교재 실전모의고사</option>
+            <option value="book" data-book>교재 실전모의고사 문항만</option>
+            <option value="all">공식 기출 + 교재 + 샘플·직접 추가 문항</option>
             <option value="db">샘플·직접 추가 문항만 (텍스트·해설 포함)</option>
           </select>
         </label>
@@ -493,6 +496,8 @@ table.ansgrid{border-collapse:collapse;width:100%;font-size:9.5pt;table-layout:f
 <script src="pdf/questions.js"></script>
 <!-- 공식 기출 해설 (tools/embed_explanations.mjs 로 생성) -->
 <script src="pdf/explanations.js"></script>
+<!-- 교재 실전모의고사 문항·해설 이미지 (tools/build_book.py 로 생성, 개인 학습용이라 저장소에는 없음) -->
+<script src="book/questions.js"></script>
 <script>
 /* =====================================================================
    1. 기본 설정
@@ -793,6 +798,23 @@ function officialBase(subject, key){
 }
 /* 오답노트에 예전에 저장된 문항도 나중에 추가된 해설을 보여 주도록 매번 조회 */
 const officialExpl = q => q.explanation || (((OFFICIAL_EXPL[`${q.year}-${q.round}`]||{})[q.subject]||{})[q.no]) || '';
+/* 교재 『검정고시 고졸 만점 뽀개기 실전모의고사』 사진에서 만든 문항·해설 이미지
+   { "4회": { "국어": [{no, img, size, text, answer, expImg, expSize, group:{id, instrInImg, img, size}}] } } */
+const BOOK_Q = window.GED_BOOK_QUESTIONS || {};
+const BOOK_TITLE = '만점 뽀개기 실전모의고사';
+const bookRounds = () => Object.keys(BOOK_Q).sort();
+function bookQuestions(subject, kind){
+  return (((BOOK_Q[kind]||{})[subject])||[]).map(it=>{
+    const g=it.group;
+    return {id:it.no, no:it.no, book:true, bookRound:kind, subject, sample:false, passage:'',
+      img:it.img, size:it.size, group:g?g.id:'', groupInstr:g?g.instr:'', groupInstrInImg:!!(g&&g.instrInImg), groupImg:g?g.img:'', groupSize:g?g.size:null,
+      groupParts:g&&g.parts&&g.parts.length>1?g.parts:null,   // 여러 단에 걸친 긴 지문의 단별 조각(인쇄용)
+      question:it.text || `${BOOK_TITLE} ${kind} ${subject} ${it.no}번`, options:['1','2','3','4'], answer:it.answer,
+      explanation:'', expImg:it.expImg||'', expSize:it.expSize, uid:`k|${kind}|${subject}|${it.no}`};
+  });
+}
+const bookPool = subject => bookRounds().flatMap(k=>bookQuestions(subject,k));
+const srcLabel = q => q.book ? `${BOOK_TITLE} ${q.bookRound}` : `${q.year}년 제${q.round}회`;
 /* 랜덤 출제용: 이미지가 있는 모든 공식 기출 문항 */
 function officialPool(subject){
   return officialRounds().filter(k=>(OFFICIAL_Q[k]||{})[subject]).flatMap(k=>officialQuestions(subject,k,false).filter(q=>q.img));
@@ -864,9 +886,16 @@ const qLabel = (p, q, i) => p.pdf ? (q.no||i+1) : i+1;
 /* 랜덤 추출: 같은 지문을 공유하는 문항은 한 묶음(unit)으로 함께 출제
    scope: 'official' 공식 기출만 · 'db' 샘플·추가 문항만 · 'all' 모두 */
 function randomPick(subject, n, scope='db'){
-  const pool = scope==='official' ? officialPool(subject) : scope==='all' ? officialPool(subject).concat(poolOf(subject)) : poolOf(subject);
+  const pools = {
+    official: ()=>officialPool(subject),
+    off_book: ()=>officialPool(subject).concat(bookPool(subject)),
+    book:     ()=>bookPool(subject),
+    all:      ()=>officialPool(subject).concat(bookPool(subject), poolOf(subject)),
+    db:       ()=>poolOf(subject)
+  };
+  const pool = (pools[scope] || pools.db)();
   const seen=new Set();
-  const uniq=pool.filter(q=>{ const k=q.official?q.uid:q.passage+'§'+q.question; if(seen.has(k)) return false; seen.add(k); return true; });
+  const uniq=pool.filter(q=>{ const k=(q.official||q.book)?q.uid:q.passage+'§'+q.question; if(seen.has(k)) return false; seen.add(k); return true; });
   const units=[], byPassage=new Map();
   uniq.forEach(q=>{
     const p=groupKey(q);
@@ -889,6 +918,7 @@ function renderHome(){
   const offQ=SUBJECTS.reduce((a,s)=>a+officialPool(s.name).length,0);
   $('#dbChips').innerHTML = (offR.length?`<span class="chip-stat">📄 공식 원본 <b>${offR.length}회차</b> (${offR[offR.length-1]} ~ ${offR[0]})</span>`:'') +
     (offQ?`<span class="chip-stat">기출 문항 이미지 <b>${offQ.toLocaleString()}문항</b></span>`:'') +
+    (bookRounds().length?`<span class="chip-stat">📘 교재 실전모의고사 <b>${SUBJECTS.reduce((a,s)=>a+bookPool(s.name).length,0)}문항</b></span>`:'') +
     `<span class="chip-stat">텍스트 DB <b>${Object.values(st).reduce((a,b)=>a+b,0)}문항</b></span>` +
     SUBJECTS.map(s=>`<span class="chip-stat">${s.icon} ${s.name}<b>${st[s.name]}</b></span>`).join('');
   const all = home.subjects.size===SUBJECTS.length;
@@ -901,22 +931,28 @@ function renderHome(){
   $('#roundRow').classList.toggle('hidden', home.method==='random');
   $('#scopeRow').classList.toggle('hidden', home.method!=='random');
   const hasOffQ=Object.keys(OFFICIAL_Q).length>0;
-  $$('#scopeSel option').forEach(o=>{ if(o.value!=='db') o.disabled=!hasOffQ; });
-  if(!hasOffQ) $('#scopeSel').value='db';
+  const hasBook=bookRounds().length>0;
+  $$('#scopeSel option').forEach(o=>{ if(o.value==='db') return; o.hidden = o.dataset.book!==undefined && !hasBook; o.disabled = o.hidden || (o.value!=='book' && !hasOffQ); });
+  if($('#scopeSel').selectedOptions[0]?.disabled) $('#scopeSel').value = hasOffQ ? 'official' : 'db';
+  $('#bookCard').classList.toggle('hidden', !hasBook);
+  if(home.method==='book' && !hasBook) home.method='random';
   $('#timeRow').classList.toggle('hidden', home.mode!=='cbt');
   const subs=[...home.subjects];
   const rounds = home.method==='official'
     ? officialRounds().map(k=>{ const [year,round]=k.split('-').map(Number); return {key:k,year,round,subjects:new Set(Object.keys(OFFICIAL_KEYS[k])),official:true}; })
+    : home.method==='book' ? bookRounds().map(k=>({key:k, book:true, counts:SUBJECTS.filter(s=>(BOOK_Q[k][s.name]||[]).length).map(s=>`${s.name} ${BOOK_Q[k][s.name].length}`)}))
     : roundList(subs);
   const prev=$('#roundSel').value;
   $('#roundSel').innerHTML = (home.method==='official' && rounds.length ? '<option value="__rand">🎲 과목별 무작위 회차 (매번 다른 실제 기출)</option>' : '') +
-    (rounds.length ? rounds.map(r=>`<option value="${r.key}">${r.year}년도 제${r.round}회 고졸 검정고시${r.official?' · 공식 원본':r.sample?' · 내장 샘플':''} (${r.subjects.size}과목)</option>`).join('') : '<option value="">선택한 과목의 회차가 없습니다</option>');
+    (rounds.length ? rounds.map(r=>r.book
+      ? `<option value="${r.key}">📘 ${BOOK_TITLE} ${r.key} (${r.counts.join(' · ')})</option>`
+      : `<option value="${r.key}">${r.year}년도 제${r.round}회 고졸 검정고시${r.official?' · 공식 원본':r.sample?' · 내장 샘플':''} (${r.subjects.size}과목)</option>`).join('') : '<option value="">선택한 과목의 회차가 없습니다</option>');
   if([...$('#roundSel').options].some(o=>o.value===prev)) $('#roundSel').value=prev;
   const ordered=SUBJECTS.filter(s=>home.subjects.has(s.name));
   const qn=ordered.reduce((a,s)=>a+s.n,0);
   const modeName={cbt:'실전 CBT',practice:'연습 모드',print:'종이 시험지 인쇄'}[home.mode];
   $('#summary').innerHTML = ordered.length
-    ? `<b>${ordered.map(s=>s.name).join(' · ')}</b> ${ordered.length}과목 · 최대 <b>${qn}</b>문항 · ${{random:'🎲 무한 랜덤',official:'📄 공식 기출 원본',round:'📅 DB 회차'}[home.method]} · <b>${modeName}</b>`
+    ? `<b>${ordered.map(s=>s.name).join(' · ')}</b> ${ordered.length}과목 · 최대 <b>${qn}</b>문항 · ${{random:'🎲 무한 랜덤',official:'📄 공식 기출 원본',book:'📘 교재 실전모의고사',round:'📅 DB 회차'}[home.method]} · <b>${modeName}</b>`
     : '과목을 하나 이상 선택하세요.';
   $('#btnStart').disabled = !ordered.length || (home.method!=='random' && !rounds.length);
 }
@@ -936,8 +972,11 @@ $('#btnStart').addEventListener('click', ()=>{
   if(!ex.papers.length){ toast('출제할 문항이 없습니다. 기출 DB를 확인하세요.'); return; }
   const short=ex.papers.filter(p=>p.questions.length<SUBJ[p.subject].n);
   const go=()=>{ if(cfg.mode==='print') openPrint(ex, cfg); else beginExam(ex); };
-  if(short.length){
-    modal('문항 수 안내', `${cfg.method==='official'?'현재 교육과정에 없는 단원(부등식의 영역·수열·지수·로그)을 제외하여':'DB 문항이 부족하여'} 다음 과목은 표준 문항 수보다 적게 출제됩니다.<br><br>${short.map(p=>`• ${p.subject}: ${p.questions.length} / ${SUBJ[p.subject].n}문항`).join('<br>')}<br><br><span class="muted">점수는 100점 만점으로 환산됩니다.</span>`,
+  const missing=cfg.subjects.filter(s=>!ex.papers.some(p=>p.subject===s));   // 문항이 하나도 없는 과목(교재 사진에 없는 과목 등)
+  if(short.length || missing.length){
+    const why = cfg.method==='official' ? '현재 교육과정에 없는 단원(부등식의 영역·수열·지수·로그)을 제외하여'
+      : cfg.method==='book' ? '교재 사진에 없는 쪽이 있어' : 'DB 문항이 부족하여';
+    modal('문항 수 안내', `${why} 다음 과목은 표준 문항 수보다 적게 출제됩니다.<br><br>${short.map(p=>`• ${p.subject}: ${p.questions.length} / ${SUBJ[p.subject].n}문항${p.questions[0]?.book?` (${p.questions[0].no}~${p.questions[p.questions.length-1].no}번)`:''}`).join('<br>')}${missing.length?`<br>• 출제할 문항 없음: ${missing.join(', ')}`:''}<br><br><span class="muted">점수는 100점 만점으로 환산됩니다.</span>`,
       [{label:'취소'},{label:'계속',cls:'pri',onClick:go}]);
   } else go();
 });
@@ -957,14 +996,17 @@ function createExam(cfg){
       const keys=officialRounds().filter(k=>OFFICIAL_KEYS[k][name]);
       const key = cfg.roundKey==='__rand' ? keys[Math.floor(Math.random()*keys.length)] : cfg.roundKey;
       qs = key ? officialQuestions(name, key) : [];
-    } else qs = cfg.method==='random' ? randomPick(name, SUBJ[name].n, cfg.scope) : roundQuestions(name, cfg.roundKey);
+    } else if(cfg.method==='book') qs = bookQuestions(name, cfg.roundKey);
+    else qs = cfg.method==='random' ? randomPick(name, SUBJ[name].n, cfg.scope) : roundQuestions(name, cfg.roundKey);
     if(!qs.length) return;
     const p=makePaper(name, qs, cfg.mode==='cbt'? limitFor(name,cfg.time) : 0);
-    if(cfg.method==='official') setPaperSource(p);
+    if(cfg.method==='official' || cfg.method==='book') setPaperSource(p);
     papers.push(p);
   });
   let title;
-  if(cfg.method==='random'){
+  if(cfg.method==='book'){
+    title=`${BOOK_TITLE} ${cfg.roundKey}`;
+  } else if(cfg.method==='random'){
     const no=store.get('ged_serial',0)+1; store.set('ged_serial',no);
     title=`AI 무한 랜덤 모의고사 제${no}회`;
   } else if(cfg.method==='official' && cfg.roundKey==='__rand'){
@@ -982,6 +1024,7 @@ function examFromQuestions(title, qs, mode){
 /* 한 회차 공식 기출로만 이뤄진 교시: 출처 표시, 문항 이미지가 없으면 원본 PDF 보기 모드 */
 function setPaperSource(p){
   const qs=p.questions.filter(q=>!q.fillFor), q0=qs[0];   // 보충 문항은 출처 판단에서 제외
+  if(q0 && q0.book && qs.every(q=>q.book && q.bookRound===q0.bookRound)){ p.source=srcLabel(q0); return; }
   if(!q0 || !q0.official || qs.some(q=>q.pdf!==q0.pdf)) return;
   p.source=`${q0.year}년 제${q0.round}회`; p.pdfLink=q0.pdf;
   if(qs.some(q=>!q.img)) p.pdf=q0.pdf;
@@ -1023,13 +1066,21 @@ function renderPaper(){
 }
 /* 지문 묶음 안내문·본문 (공식 기출은 이미지, 텍스트 문항은 지문 상자) */
 const groupInstr = q => q.groupInstr || '다음 글을 읽고 물음에 답하시오.';
+/* 지문 묶음 제목: 교재 문항은 안내문이 이미지 첫 줄에 있으므로 새 번호만 */
+const groupTitle = (q, from, to) => `${to>from?`[${from}~${to}] `:''}${q.groupInstrInImg?'':esc(groupInstr(q))}`;
+/* 해설: 교재는 해설 이미지, 공식 기출은 작성된 해설(없으면 출처 안내) */
+function explBody(q){
+  if(q.expImg) return `<img class="qimg" src="${encodeURI(q.expImg)}" style="width:${q.expSize?.[0]*0.75||560}px;margin-top:4px" alt="해설">`;
+  const t = q.official ? officialExpl(q) : q.explanation;
+  return rich(t || (q.official ? `${srcLabel(q)} ${q.subject} ${q.no}번 공식 기출 문항입니다.` : '해설이 등록되지 않은 문항입니다.'));
+}
 function groupBody(q){
   if(q.groupImg) return `<img class="qimg" src="${encodeURI(q.groupImg)}" style="width:${q.groupSize?.[0]*0.75||600}px" alt="지문">`;
   return q.passage ? `<div class="passage">${rich(q.passage)}</div>` : '';
 }
 function groupHead(p,i){
   const r=p._runs[i]; if(!r || r.cont || !r.multi) return '';
-  return `<div class="grp"><div class="grp-h">[${i+1}~${r.end+1}] ${esc(groupInstr(p.questions[i]))}</div>${groupBody(p.questions[i])}</div>`;
+  return `<div class="grp"><div class="grp-h">${groupTitle(p.questions[i], i+1, r.end+1)}</div>${groupBody(p.questions[i])}</div>`;
 }
 function cardHTML(i){
   const p=curPaper(), q=p.questions[i], r=p._runs[i];
@@ -1039,20 +1090,20 @@ function cardHTML(i){
     const n=k+1; let cls='';
     if(rev){ if(isRight(q,n)) cls='right'; else if(n===mine) cls='wrong'; }
     else if(n===mine) cls='sel';
-    return `<button class="opt ${cls}" data-q="${i}" data-o="${n}" ${rev?'disabled':''}><span class="circ">${CIRC[k]}</span><span>${q.official?'':rich(o)}</span></button>`;
+    return `<button class="opt ${cls}" data-q="${i}" data-o="${n}" ${rev?'disabled':''}><span class="circ">${CIRC[k]}</span><span>${q.official||q.img?'':rich(o)}</span></button>`;
   }).join('');
   const ok=isRight(q,mine);
-  const ex = rev ? `<div class="expl ${ok?'ok':'ng'}"><span class="tag">${ok?'⭕ 정답입니다!':'❌ 오답입니다.'}</span>정답 ${ansText(q)}<div style="margin-top:6px">${rich(q.explanation||(q.official?`${q.year}년 제${q.round}회 ${q.subject} ${q.no}번 공식 기출 문항입니다.`:'해설이 등록되지 않은 문항입니다.'))}</div></div>` : '';
+  const ex = rev ? `<div class="expl ${ok?'ok':'ng'}"><span class="tag">${ok?'⭕ 정답입니다!':'❌ 오답입니다.'}</span>정답 ${ansText(q)}<div style="margin-top:6px">${explBody(q)}</div></div>` : '';
   const stem = q.img
     ? `<img class="qimg" src="${encodeURI(q.img)}" style="width:${q.size?.[0]*0.75||600}px" alt="${esc(q.question)}">`
     : rich(q.question) + (q.official ? ` <a href="${encodeURI(q.pdf)}" target="_blank" rel="noopener" style="font-size:13px;font-weight:400">📄 원본 열기</a>` : '');
-  const singleHead = single ? (q.img ? `<div class="grp-h" style="margin-top:8px">${esc(groupInstr(q))}</div>${groupBody(q)}` : groupBody(q)) : '';
+  const singleHead = single ? (q.img ? `<div class="grp-h" style="margin-top:8px">${groupTitle(q,i+1,i+1)}</div>${groupBody(q)}` : groupBody(q)) : '';
   return `<article class="qcard ${flag?'flagged':''}" id="q-${i}">
     ${q.img?singleHead:''}
     <div class="qhead"><span class="qnum">${i+1}.</span><div class="qstem">${stem}</div><button class="flagbtn ${flag?'on':''}" data-flag="${i}">${flag?'★ 검토':'☆ 검토'}</button></div>
     ${q.img?'':singleHead}
     <div class="opts ${q.img?'row4':''}">${opts}</div>${ex}
-    ${q.official&&q.img?`<div class="qsrc">${q.fillFor?'보충 문항 · ':''}${q.year}년 제${q.round}회 ${q.subject} ${q.no}번</div>`:''}</article>`;
+    ${(q.official||q.book)&&q.img?`<div class="qsrc">${q.fillFor?'보충 문항 · ':''}${srcLabel(q)} ${q.subject} ${q.no}번</div>`:''}</article>`;
 }
 function omrRowHTML(i){
   const p=curPaper(), q=p.questions[i], mine=p.answers[i];
@@ -1137,7 +1188,7 @@ $('#btnQuit').addEventListener('click', ()=>{
    ===================================================================== */
 let lastResult=null, rvFilter='wrong';
 function snapshot(q){
-  const keys=['uid','id','no','official','pdf','img','size','group','groupInstr','groupImg','groupSize','optText','subject','year','round','sample','passage','question','options','answer','explanation'];
+  const keys=['uid','id','no','official','book','bookRound','pdf','img','size','group','groupInstr','groupInstrInImg','groupImg','groupSize','optText','subject','year','round','sample','passage','question','options','answer','explanation','expImg','expSize'];
   return Object.fromEntries(keys.filter(k=>q[k]!==undefined).map(k=>[k,q[k]]));
 }
 function finishExam(){
@@ -1209,14 +1260,14 @@ function renderResult(){
 }
 function reviewCard(q, i, mine, extraTag){
   const ok=isRight(q,mine);
-  if(q.official) return `<div class="rv">
+  if(q.official || q.book) return `<div class="rv">
     <div class="rv-h"><b>${i+1}번</b><span class="badge gray">${q.subject}</span><span class="badge ${ok?'ok':'bad'}">${ok?'정답':mine?'오답':'미응답'}</span>
-      <span class="off-tag">공식 원본</span><span class="muted">${q.year}년 제${q.round}회 ${q.no}번</span>${extraTag||''}</div>
-    ${q.groupImg?`<details class="psg"><summary>지문 보기 · ${esc(groupInstr(q))}</summary>${groupBody(q)}</details>`:''}
+      <span class="off-tag" ${q.book?'style="background:#5b3fc4"':''}>${q.book?'교재':'공식 원본'}</span><span class="muted">${srcLabel(q)} ${q.no}번</span>${extraTag||''}</div>
+    ${q.groupImg?`<details class="psg"><summary>지문 보기${q.groupInstrInImg?'':' · '+esc(groupInstr(q))}</summary>${groupBody(q)}</details>`:''}
     ${q.img?`<img class="qimg" src="${encodeURI(q.img)}" style="width:${q.size?.[0]*0.7||560}px;margin:8px 0" alt="${esc(q.question)}">`:''}
     <div class="rv-q">내 답 <b style="color:${ok?'var(--ok)':'var(--bad)'}">${mine?CIRC[mine-1]:'—'}</b> · 정답 <b style="color:var(--ok)">${ansText(q)}</b>${Array.isArray(q.answer)?' <span class="muted">(복수 정답)</span>':''}
-      · <a href="${encodeURI(q.pdf)}" target="_blank" rel="noopener">📄 원본 시험지</a></div>
-    ${officialExpl(q)?`<div class="expl" style="margin-top:10px"><span class="tag">해설</span>${rich(officialExpl(q))}</div>`:''}</div>`;
+      ${q.pdf?`· <a href="${encodeURI(q.pdf)}" target="_blank" rel="noopener">📄 원본 시험지</a>`:''}</div>
+    ${q.expImg || officialExpl(q)?`<div class="expl" style="margin-top:10px"><span class="tag">해설</span>${explBody(q)}</div>`:''}</div>`;
   return `<div class="rv">
     <div class="rv-h"><b>${i+1}번</b><span class="badge gray">${q.subject}</span><span class="badge ${ok?'ok':'bad'}">${ok?'정답':mine?'오답':'미응답'}</span>
       <span class="muted">${q.year}년 ${q.round}회${q.sample?' · 샘플':''}</span>${extraTag||''}</div>
@@ -1286,7 +1337,7 @@ function optLayout(opts){
 }
 function printGroup(q, from, to){
   const body = q.groupImg ? printImg(q.groupImg, q.groupSize, COL_MM) : q.passage ? `<div class="ppass">${rich(q.passage)}</div>` : '';
-  return `<div class="pgrp"><div class="pgrp-h">${to>from?`[${from}～${to}] `:''}${esc(groupInstr(q))}</div>${body}</div>`;
+  return `<div class="pgrp"><div class="pgrp-h">${groupTitle(q, from, to)}</div>${body}</div>`;
 }
 function printQ(q, label, single){
   if(q.img) return `<div class="pq pq-i"><b class="pq-n">${label}.</b>${printImg(q.img, q.size, COL_MM-6)}</div>`;
@@ -1298,7 +1349,11 @@ function paperBlocks(p){
   const runs=passageRuns(p.questions), out=[];
   p.questions.forEach((q,i)=>{
     const r=runs[i], lab=qLabel(p,q,i), single=r && !r.cont && !r.multi;
-    if(r && !r.cont && r.multi) out.push(printGroup(q, i+1, r.end+1));
+    if(r && !r.cont && r.multi){
+      if(q.groupParts){   // 긴 지문은 단별 조각을 각각 블록으로 → 단·페이지를 넘어 이어짐
+        q.groupParts.forEach((pt,k)=>out.push(`<div class="pgrp">${k?'':`<div class="pgrp-h">${groupTitle(q, i+1, r.end+1)}</div>`}${printImg(pt.img, pt.size, COL_MM)}</div>`));
+      } else out.push(printGroup(q, i+1, r.end+1));
+    }
     // 지문이 하나뿐인 문항은 안내문·지문과 문항을 한 블록으로 묶음
     if(single && q.img && (q.groupImg || q.groupInstr)) out.push(`<div class="blk">${printGroup(q,i+1,i+1)}${printQ(q,lab,false)}</div>`);
     else out.push(printQ(q, lab, single));
@@ -1306,12 +1361,10 @@ function paperBlocks(p){
   return out;
 }
 function paperHeader(ex,p){
-  const s=SUBJ[p.subject], n=p.questions.length;
+  const s=SUBJ[p.subject];
   return `<div class="ph">
       <div class="ph-row"><span class="ph-badge">제 ${s.period} 교시</span><span class="ph-exam">${esc(ex.title)}</span><span class="ph-type">고졸학력</span></div>
       <div class="ph-subj">${spaced(p.subject)}</div>
-      <table class="idt"><tr><th>수험번호</th>${'<td></td>'.repeat(8)}<th>성 명</th><td class="nm"></td></tr></table>
-      <div class="ph-info">※ 문항 수 ${n}문항 · 문항당 ${ptsOf(n)}점 · 시험 시간 ${s.real}분 · 정답을 골라 OMR 답안지에 컴퓨터용 사인펜으로 표기하시오.${p.source?` · 출처: ${p.source} 고졸 검정고시`:''}</div>
     </div>`;
 }
 const miniHeader = (left, right) => `<div class="ph-mini"><span>${left}</span><span>${right}</span></div>`;
@@ -1372,13 +1425,15 @@ function answerBlocks(ex, withGrid, withExp){
       const ks=[]; for(let k=i;k<i+10;k++) ks.push(k);
       rows.push(`<tr>${ks.map(k=>`<th>${k<n?qLabel(p,p.questions[k],k):''}</th>`).join('')}</tr><tr>${ks.map(k=>`<td>${k<n?ansText(p.questions[k]):''}</td>`).join('')}</tr><tr>${ks.map(k=>`<td class="mk">${k<n?'○ ×':''}</td>`).join('')}</tr>`);
     }
-    out.push(`<div class="ans-block"><h4>제${p.period}교시 ${p.subject}${p.source?` <small>(${p.source} 공식 정답)</small>`:''}</h4>
+    out.push(`<div class="ans-block"><h4>제${p.period}교시 ${p.subject}${p.source?` <small>(${p.source} ${p.questions[0]?.book?'정답':'공식 정답'})</small>`:''}</h4>
       <div class="ans-meta">문항당 ${ptsOf(n)}점 · 맞힌 개수 ____ / ${n} · 점수 ____ 점</div><table class="ansgrid">${rows.join('')}</table></div>`);
   });
   if(withExp) ex.papers.forEach(p=>{
-    if(!p.questions.some(q=>q.explanation)) return;
+    if(!p.questions.some(q=>q.explanation||q.expImg)) return;
     out.push(`<div class="exp-h">제${p.period}교시 ${p.subject} 상세 해설</div>`);
-    p.questions.forEach((q,i)=>out.push(`<div class="exp"><b>${qLabel(p,q,i)}. 정답 ${ansText(q)}</b> ${rich(q.explanation||(q.official?`${q.year}년 제${q.round}회 ${q.no}번 공식 기출 (해설 미등록)`:'해설 없음'))}</div>`));
+    p.questions.forEach((q,i)=>out.push(q.expImg
+      ? `<div class="exp"><b>${qLabel(p,q,i)}. 정답 ${ansText(q)}</b> <small>(${srcLabel(q)} ${q.no}번 해설)</small>${printImg(q.expImg, q.expSize, COL_MM)}</div>`
+      : `<div class="exp"><b>${qLabel(p,q,i)}. 정답 ${ansText(q)}</b> ${rich(q.explanation||(q.official?`${srcLabel(q)} ${q.no}번 공식 기출 (해설 미등록)`:'해설 없음'))}</div>`));
   });
   return out;
 }

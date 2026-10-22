@@ -3,3 +3,8 @@ __pycache__/
 *.pyc
 .DS_Store
 Thumbs.db
+
+# 시중 교재(저작물) 사진·가공 이미지 — 개인 학습용, 저장소에 올리지 않음
+book/
+*.zip
+*.Zip
