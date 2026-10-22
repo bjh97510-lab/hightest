@@ -746,6 +746,16 @@ const OFFICIAL_EXCLUDED = {
   "2020-2": {"수학": {16:"수열", 17:"수열", 18:"수열", 19:"지수", 20:"로그"}}
 };
 const isExcluded = q => !!(q.official && ((OFFICIAL_EXCLUDED[`${q.year}-${q.round}`]||{})[q.subject]||{})[q.no]);
+/* 제외로 20문항이 안 되는 회차를 2021년 이후 같은 단원 문항으로 보충 (tools/plan_math_fill.mjs 로 생성)
+   [출처 회차, 출처 번호, 원래 시험지에서 이 번호 문항 뒤에 배치] */
+const OFFICIAL_FILL = /*OFFICIAL_FILL*/{
+  "2018-1": {"수학": [["2023-1",3,3],["2021-2",9,6],["2026-2",8,6],["2025-2",7,6],["2022-2",20,16],["2022-1",20,16]]},
+  "2018-2": {"수학": [["2023-2",2,3],["2024-1",6,7],["2022-1",10,7],["2021-2",20,16],["2022-2",19,16]]},
+  "2019-1": {"수학": [["2025-1",1,3],["2022-1",7,6],["2025-2",6,6],["2021-1",8,6],["2024-2",19,15],["2023-2",20,15]]},
+  "2019-2": {"수학": [["2021-2",1,3],["2024-2",6,6],["2026-1",8,6],["2023-2",5,6],["2025-1",19,16],["2021-1",20,16]]},
+  "2020-1": {"수학": [["2024-1",2,3],["2022-1",5,7],["2026-2",9,7],["2026-1",14,10],["2021-2",19,15],["2025-2",20,15]]},
+  "2020-2": {"수학": [["2025-2",1,3],["2021-2",6,7],["2022-2",10,7],["2021-1",19,15],["2026-1",20,15]]}
+}/*END_OFFICIAL_FILL*/;
 const officialPdf = (key, subject) => `pdf/${key}/${subject}.pdf`;
 function officialRounds(){
   return Object.keys(OFFICIAL_KEYS).sort((a,b)=>{ const [ay,ar]=a.split('-').map(Number), [by,br]=b.split('-').map(Number); return by-ay||br-ar; });
@@ -754,7 +764,22 @@ function officialRounds(){
 const OFFICIAL_Q = window.GED_OFFICIAL_QUESTIONS || {};
 /* 해설: { "2026-2": { "국어": { "1": "..." } } } */
 const OFFICIAL_EXPL = window.GED_EXPLANATIONS || {};
-function officialQuestions(subject, key){
+/* fill: 제외로 비는 회차를 보충 문항으로 20문항까지 채움 (랜덤 출제 풀에서는 중복을 막으려고 끔) */
+function officialQuestions(subject, key, fill=true){
+  const base=officialBase(subject, key);
+  const plan=fill && (OFFICIAL_FILL[key]||{})[subject];
+  if(!plan) return base;
+  const out=base.slice();
+  plan.forEach(([srcKey, srcNo, after], i)=>{
+    const q=officialBase(subject, srcKey).find(x=>x.no===srcNo); if(!q) return;
+    const filled={...q, fillFor:key};
+    // 원래 번호 after 문항(앞서 넣은 보충 문항 포함) 바로 뒤에 배치
+    let at=0; out.forEach((x,j)=>{ if((x.fillFor?x.after:x.no)<=after) at=j+1; });
+    filled.after=after; out.splice(at,0,filled);
+  });
+  return out;
+}
+function officialBase(subject, key){
   const ans=(OFFICIAL_KEYS[key]||{})[subject]; if(!ans) return [];
   const [year, round]=key.split('-').map(Number), pdf=officialPdf(key, subject);
   const items=new Map((((OFFICIAL_Q[key]||{})[subject])||[]).map(it=>[it.no,it]));
@@ -770,7 +795,7 @@ function officialQuestions(subject, key){
 const officialExpl = q => q.explanation || (((OFFICIAL_EXPL[`${q.year}-${q.round}`]||{})[q.subject]||{})[q.no]) || '';
 /* 랜덤 출제용: 이미지가 있는 모든 공식 기출 문항 */
 function officialPool(subject){
-  return officialRounds().filter(k=>(OFFICIAL_Q[k]||{})[subject]).flatMap(k=>officialQuestions(subject,k).filter(q=>q.img));
+  return officialRounds().filter(k=>(OFFICIAL_Q[k]||{})[subject]).flatMap(k=>officialQuestions(subject,k,false).filter(q=>q.img));
 }
 
 /* =====================================================================
@@ -956,7 +981,7 @@ function examFromQuestions(title, qs, mode){
 }
 /* 한 회차 공식 기출로만 이뤄진 교시: 출처 표시, 문항 이미지가 없으면 원본 PDF 보기 모드 */
 function setPaperSource(p){
-  const qs=p.questions, q0=qs[0];
+  const qs=p.questions.filter(q=>!q.fillFor), q0=qs[0];   // 보충 문항은 출처 판단에서 제외
   if(!q0 || !q0.official || qs.some(q=>q.pdf!==q0.pdf)) return;
   p.source=`${q0.year}년 제${q0.round}회`; p.pdfLink=q0.pdf;
   if(qs.some(q=>!q.img)) p.pdf=q0.pdf;
@@ -1027,7 +1052,7 @@ function cardHTML(i){
     <div class="qhead"><span class="qnum">${i+1}.</span><div class="qstem">${stem}</div><button class="flagbtn ${flag?'on':''}" data-flag="${i}">${flag?'★ 검토':'☆ 검토'}</button></div>
     ${q.img?'':singleHead}
     <div class="opts ${q.img?'row4':''}">${opts}</div>${ex}
-    ${q.official&&q.img?`<div class="qsrc">${q.year}년 제${q.round}회 ${q.subject} ${q.no}번</div>`:''}</article>`;
+    ${q.official&&q.img?`<div class="qsrc">${q.fillFor?'보충 문항 · ':''}${q.year}년 제${q.round}회 ${q.subject} ${q.no}번</div>`:''}</article>`;
 }
 function omrRowHTML(i){
   const p=curPaper(), q=p.questions[i], mine=p.answers[i];
