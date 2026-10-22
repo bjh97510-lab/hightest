@@ -22,6 +22,18 @@ python tools/build_book.py 모의고사.Zip                                     
 
 사진 순서와 회차·과목·쪽의 대응, 정답표는 `tools/build_book.py`의 `page_table`·`ANSWERS`에 있습니다(다른 교재는 이 부분을 바꿔야 함).
 
+## 학습자료 e-book '기출문제 도전하기' (저장소에 없음)
+
+검정고시지원센터 『성인학습자 맞춤형 검정고시 학습자료』 e-book(국어·수학·영어·과학)의 단원별 '기출문제 도전하기' 문항·정답·해설을 이미지로 추출합니다.
+
+```
+# 페이지 이미지: http://218.38.12.36/.../files/page/N.png|jpg → <EBOOK>/pages/<책>/NNN.*
+powershell -ExecutionPolicy Bypass -File tools/ocr_windows.ps1 -InDir <EBOOK>/pages/<책> -OutDir <EBOOK>/ocr/<책>
+python tools/build_ebook.py <EBOOK> h_science h_korean h_math h_english        # → ebook/questions.js
+```
+
+정답 원문자는 `tools/circ_templates.npy` 견본과 모양을 비교해 읽고, 자동 판별이 안 된 문항은 `OVERRIDES`에 사람이 확인한 값을 둡니다.
+
 ## 폴더 구성
 
 | 경로 | 내용 |

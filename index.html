@@ -322,6 +322,7 @@ table.ansgrid{border-collapse:collapse;width:100%;font-size:9.5pt;table-layout:f
         <button class="ocard on" data-method="random"><b>🎲 AI 무한 랜덤 모의고사</b><span>전체 기출 DB에서 무작위 추출해 신규 1회분 조합 (지문 세트는 묶어서 출제)</span></button>
         <button class="ocard" data-method="official"><b>📄 공식 기출 원본 시험지</b><span>2018~2026년 실제 시험지 PDF를 보며 OMR 마킹 → 공식 정답표로 자동 채점</span></button>
         <button class="ocard" data-method="book" id="bookCard"><b>📘 교재 실전모의고사</b><span>『검정고시 고졸 만점 뽀개기 실전모의고사』 4·5회 (사진에 있는 문항·해설)</span></button>
+        <button class="ocard" data-method="ebook" id="ebookCard"><b>📗 학습자료 e-book 기출문제</b><span>검정고시지원센터 학습자료 단원별 '기출문제 도전하기' (정답·해설 포함)</span></button>
         <button class="ocard" data-method="round"><b>📅 DB 회차 풀기</b><span>텍스트 DB에 등록된 회차를 해설과 함께 응시</span></button>
       </div>
       <div class="row" id="scopeRow" style="margin-top:12px">
@@ -330,7 +331,9 @@ table.ansgrid{border-collapse:collapse;width:100%;font-size:9.5pt;table-layout:f
             <option value="official">공식 기출 문항 (2018~2026 실제 시험지에서 무작위)</option>
             <option value="off_book" data-book>공식 기출 + 교재 실전모의고사</option>
             <option value="book" data-book>교재 실전모의고사 문항만</option>
-            <option value="all">공식 기출 + 교재 + 샘플·직접 추가 문항</option>
+            <option value="off_ebook" data-ebook>공식 기출 + 학습자료 e-book 기출문제 도전하기</option>
+            <option value="ebook" data-ebook>학습자료 e-book 기출문제 도전하기 문항만</option>
+            <option value="all">공식 기출 + 교재 + e-book + 샘플·직접 추가 문항</option>
             <option value="db">샘플·직접 추가 문항만 (텍스트·해설 포함)</option>
           </select>
         </label>
@@ -498,6 +501,8 @@ table.ansgrid{border-collapse:collapse;width:100%;font-size:9.5pt;table-layout:f
 <script src="pdf/explanations.js"></script>
 <!-- 교재 실전모의고사 문항·해설 이미지 (tools/build_book.py 로 생성, 개인 학습용이라 저장소에는 없음) -->
 <script src="book/questions.js"></script>
+<!-- 검정고시지원센터 학습자료 e-book '기출문제 도전하기' (tools/build_ebook.py 로 생성, 저장소에는 없음) -->
+<script src="ebook/questions.js"></script>
 <script>
 /* =====================================================================
    1. 기본 설정
@@ -814,7 +819,22 @@ function bookQuestions(subject, kind){
   });
 }
 const bookPool = subject => bookRounds().flatMap(k=>bookQuestions(subject,k));
-const srcLabel = q => q.book ? `${BOOK_TITLE} ${q.bookRound}` : `${q.year}년 제${q.round}회`;
+/* 검정고시지원센터 『성인학습자 맞춤형 검정고시 학습자료』 e-book 의 단원별 '기출문제 도전하기'
+   { "과학": { "01": [{no, img, size, text, answer, expImg, expSize, group?}] } } */
+const EBOOK_Q = window.GED_EBOOK_QUESTIONS || {};
+const EBOOK_TITLE = '검정고시 학습자료 기출문제 도전하기';
+const ebookChapters = subject => Object.keys(EBOOK_Q[subject]||{}).sort();
+function ebookQuestions(subject, ch){
+  return ((EBOOK_Q[subject]||{})[ch]||[]).map(it=>{
+    const g=it.group;
+    return {id:it.no, no:it.no, book:true, ebook:true, bookRound:`${+ch}단원`, src:`학습자료 e-book ${+ch}단원`, subject, sample:false, passage:'',
+      img:it.img, size:it.size, group:g?g.id:'', groupInstr:g?g.instr:'', groupInstrInImg:!!(g&&g.instrInImg), groupImg:g?g.img:'', groupSize:g?g.size:null,
+      question:it.text || `${EBOOK_TITLE} ${subject} ${+ch}단원 ${it.no}번`, options:['1','2','3','4'], answer:it.answer,
+      explanation:'', expImg:it.expImg||'', expSize:it.expSize, uid:`e|${subject}|${ch}|${it.no}`};
+  });
+}
+const ebookPool = subject => ebookChapters(subject).flatMap(ch=>ebookQuestions(subject,ch));
+const srcLabel = q => q.src || (q.book ? `${BOOK_TITLE} ${q.bookRound}` : `${q.year}년 제${q.round}회`);
 /* 랜덤 출제용: 이미지가 있는 모든 공식 기출 문항 */
 function officialPool(subject){
   return officialRounds().filter(k=>(OFFICIAL_Q[k]||{})[subject]).flatMap(k=>officialQuestions(subject,k,false).filter(q=>q.img));
@@ -890,7 +910,9 @@ function randomPick(subject, n, scope='db'){
     official: ()=>officialPool(subject),
     off_book: ()=>officialPool(subject).concat(bookPool(subject)),
     book:     ()=>bookPool(subject),
-    all:      ()=>officialPool(subject).concat(bookPool(subject), poolOf(subject)),
+    ebook:    ()=>ebookPool(subject),
+    off_ebook:()=>officialPool(subject).concat(ebookPool(subject)),
+    all:      ()=>officialPool(subject).concat(bookPool(subject), ebookPool(subject), poolOf(subject)),
     db:       ()=>poolOf(subject)
   };
   const pool = (pools[scope] || pools.db)();
@@ -919,6 +941,7 @@ function renderHome(){
   $('#dbChips').innerHTML = (offR.length?`<span class="chip-stat">📄 공식 원본 <b>${offR.length}회차</b> (${offR[offR.length-1]} ~ ${offR[0]})</span>`:'') +
     (offQ?`<span class="chip-stat">기출 문항 이미지 <b>${offQ.toLocaleString()}문항</b></span>`:'') +
     (bookRounds().length?`<span class="chip-stat">📘 교재 실전모의고사 <b>${SUBJECTS.reduce((a,s)=>a+bookPool(s.name).length,0)}문항</b></span>`:'') +
+    (Object.keys(EBOOK_Q).length?`<span class="chip-stat">📗 학습자료 e-book <b>${SUBJECTS.reduce((a,s)=>a+ebookPool(s.name).length,0)}문항</b></span>`:'') +
     `<span class="chip-stat">텍스트 DB <b>${Object.values(st).reduce((a,b)=>a+b,0)}문항</b></span>` +
     SUBJECTS.map(s=>`<span class="chip-stat">${s.icon} ${s.name}<b>${st[s.name]}</b></span>`).join('');
   const all = home.subjects.size===SUBJECTS.length;
@@ -932,19 +955,25 @@ function renderHome(){
   $('#scopeRow').classList.toggle('hidden', home.method!=='random');
   const hasOffQ=Object.keys(OFFICIAL_Q).length>0;
   const hasBook=bookRounds().length>0;
-  $$('#scopeSel option').forEach(o=>{ if(o.value==='db') return; o.hidden = o.dataset.book!==undefined && !hasBook; o.disabled = o.hidden || (o.value!=='book' && !hasOffQ); });
+  const hasEbook=Object.keys(EBOOK_Q).length>0;
+  $$('#scopeSel option').forEach(o=>{ if(o.value==='db') return; o.hidden = (o.dataset.book!==undefined && !hasBook) || (o.dataset.ebook!==undefined && !hasEbook);
+    o.disabled = o.hidden || (!['book','ebook'].includes(o.value) && !hasOffQ); });
   if($('#scopeSel').selectedOptions[0]?.disabled) $('#scopeSel').value = hasOffQ ? 'official' : 'db';
   $('#bookCard').classList.toggle('hidden', !hasBook);
   if(home.method==='book' && !hasBook) home.method='random';
+  $('#ebookCard').classList.toggle('hidden', !hasEbook);
+  if(home.method==='ebook' && !hasEbook) home.method='random';
   $('#timeRow').classList.toggle('hidden', home.mode!=='cbt');
   const subs=[...home.subjects];
   const rounds = home.method==='official'
     ? officialRounds().map(k=>{ const [year,round]=k.split('-').map(Number); return {key:k,year,round,subjects:new Set(Object.keys(OFFICIAL_KEYS[k])),official:true}; })
     : home.method==='book' ? bookRounds().map(k=>({key:k, book:true, counts:SUBJECTS.filter(s=>(BOOK_Q[k][s.name]||[]).length).map(s=>`${s.name} ${BOOK_Q[k][s.name].length}`)}))
+    : home.method==='ebook' ? [{key:'__rand', ebook:true, label:`🎲 단원 무작위 섞기 (과목별 표준 문항 수 · ${SUBJECTS.filter(s=>ebookPool(s.name).length).map(s=>`${s.name} ${ebookPool(s.name).length}`).join(' · ')})`}]
+        .concat(subs.length===1 ? ebookChapters(subs[0]).map(ch=>({key:`${subs[0]}|${ch}`, ebook:true, label:`📗 ${subs[0]} ${+ch}단원 기출문제 도전하기 (${EBOOK_Q[subs[0]][ch].length}문항)`})) : [])
     : roundList(subs);
   const prev=$('#roundSel').value;
   $('#roundSel').innerHTML = (home.method==='official' && rounds.length ? '<option value="__rand">🎲 과목별 무작위 회차 (매번 다른 실제 기출)</option>' : '') +
-    (rounds.length ? rounds.map(r=>r.book
+    (rounds.length ? rounds.map(r=>r.ebook ? `<option value="${r.key}">${r.label}</option>` : r.book
       ? `<option value="${r.key}">📘 ${BOOK_TITLE} ${r.key} (${r.counts.join(' · ')})</option>`
       : `<option value="${r.key}">${r.year}년도 제${r.round}회 고졸 검정고시${r.official?' · 공식 원본':r.sample?' · 내장 샘플':''} (${r.subjects.size}과목)</option>`).join('') : '<option value="">선택한 과목의 회차가 없습니다</option>');
   if([...$('#roundSel').options].some(o=>o.value===prev)) $('#roundSel').value=prev;
@@ -952,7 +981,7 @@ function renderHome(){
   const qn=ordered.reduce((a,s)=>a+s.n,0);
   const modeName={cbt:'실전 CBT',practice:'연습 모드',print:'종이 시험지 인쇄'}[home.mode];
   $('#summary').innerHTML = ordered.length
-    ? `<b>${ordered.map(s=>s.name).join(' · ')}</b> ${ordered.length}과목 · 최대 <b>${qn}</b>문항 · ${{random:'🎲 무한 랜덤',official:'📄 공식 기출 원본',book:'📘 교재 실전모의고사',round:'📅 DB 회차'}[home.method]} · <b>${modeName}</b>`
+    ? `<b>${ordered.map(s=>s.name).join(' · ')}</b> ${ordered.length}과목 · 최대 <b>${qn}</b>문항 · ${{random:'🎲 무한 랜덤',official:'📄 공식 기출 원본',book:'📘 교재 실전모의고사',ebook:'📗 학습자료 e-book',round:'📅 DB 회차'}[home.method]} · <b>${modeName}</b>`
     : '과목을 하나 이상 선택하세요.';
   $('#btnStart').disabled = !ordered.length || (home.method!=='random' && !rounds.length);
 }
@@ -975,7 +1004,8 @@ $('#btnStart').addEventListener('click', ()=>{
   const missing=cfg.subjects.filter(s=>!ex.papers.some(p=>p.subject===s));   // 문항이 하나도 없는 과목(교재 사진에 없는 과목 등)
   if(short.length || missing.length){
     const why = cfg.method==='official' ? '현재 교육과정에 없는 단원(부등식의 영역·수열·지수·로그)을 제외하여'
-      : cfg.method==='book' ? '교재 사진에 없는 쪽이 있어' : 'DB 문항이 부족하여';
+      : cfg.method==='book' ? '교재 사진에 없는 쪽이 있어'
+      : cfg.method==='ebook' ? '학습자료 e-book 에 해당 단원·과목 문항이 적어' : 'DB 문항이 부족하여';
     modal('문항 수 안내', `${why} 다음 과목은 표준 문항 수보다 적게 출제됩니다.<br><br>${short.map(p=>`• ${p.subject}: ${p.questions.length} / ${SUBJ[p.subject].n}문항${p.questions[0]?.book?` (${p.questions[0].no}~${p.questions[p.questions.length-1].no}번)`:''}`).join('<br>')}${missing.length?`<br>• 출제할 문항 없음: ${missing.join(', ')}`:''}<br><br><span class="muted">점수는 100점 만점으로 환산됩니다.</span>`,
       [{label:'취소'},{label:'계속',cls:'pri',onClick:go}]);
   } else go();
@@ -997,6 +1027,10 @@ function createExam(cfg){
       const key = cfg.roundKey==='__rand' ? keys[Math.floor(Math.random()*keys.length)] : cfg.roundKey;
       qs = key ? officialQuestions(name, key) : [];
     } else if(cfg.method==='book') qs = bookQuestions(name, cfg.roundKey);
+    else if(cfg.method==='ebook'){
+      if(cfg.roundKey==='__rand') qs = randomPick(name, SUBJ[name].n, 'ebook');
+      else { const [sub, ch]=cfg.roundKey.split('|'); qs = sub===name ? ebookQuestions(name, ch) : []; }
+    }
     else qs = cfg.method==='random' ? randomPick(name, SUBJ[name].n, cfg.scope) : roundQuestions(name, cfg.roundKey);
     if(!qs.length) return;
     const p=makePaper(name, qs, cfg.mode==='cbt'? limitFor(name,cfg.time) : 0);
@@ -1006,6 +1040,8 @@ function createExam(cfg){
   let title;
   if(cfg.method==='book'){
     title=`${BOOK_TITLE} ${cfg.roundKey}`;
+  } else if(cfg.method==='ebook'){
+    title = cfg.roundKey==='__rand' ? `${EBOOK_TITLE} 단원 섞기` : `${EBOOK_TITLE} ${cfg.roundKey.split('|')[0]} ${+cfg.roundKey.split('|')[1]}단원`;
   } else if(cfg.method==='random'){
     const no=store.get('ged_serial',0)+1; store.set('ged_serial',no);
     title=`AI 무한 랜덤 모의고사 제${no}회`;
@@ -1188,7 +1224,7 @@ $('#btnQuit').addEventListener('click', ()=>{
    ===================================================================== */
 let lastResult=null, rvFilter='wrong';
 function snapshot(q){
-  const keys=['uid','id','no','official','book','bookRound','pdf','img','size','group','groupInstr','groupInstrInImg','groupImg','groupSize','optText','subject','year','round','sample','passage','question','options','answer','explanation','expImg','expSize'];
+  const keys=['uid','id','no','official','book','ebook','src','bookRound','pdf','img','size','group','groupInstr','groupInstrInImg','groupImg','groupSize','optText','subject','year','round','sample','passage','question','options','answer','explanation','expImg','expSize'];
   return Object.fromEntries(keys.filter(k=>q[k]!==undefined).map(k=>[k,q[k]]));
 }
 function finishExam(){
@@ -1262,7 +1298,7 @@ function reviewCard(q, i, mine, extraTag){
   const ok=isRight(q,mine);
   if(q.official || q.book) return `<div class="rv">
     <div class="rv-h"><b>${i+1}번</b><span class="badge gray">${q.subject}</span><span class="badge ${ok?'ok':'bad'}">${ok?'정답':mine?'오답':'미응답'}</span>
-      <span class="off-tag" ${q.book?'style="background:#5b3fc4"':''}>${q.book?'교재':'공식 원본'}</span><span class="muted">${srcLabel(q)} ${q.no}번</span>${extraTag||''}</div>
+      <span class="off-tag" ${q.ebook?'style="background:#1f7a4d"':q.book?'style="background:#5b3fc4"':''}>${q.ebook?'학습자료':q.book?'교재':'공식 원본'}</span><span class="muted">${srcLabel(q)} ${q.no}번</span>${extraTag||''}</div>
     ${q.groupImg?`<details class="psg"><summary>지문 보기${q.groupInstrInImg?'':' · '+esc(groupInstr(q))}</summary>${groupBody(q)}</details>`:''}
     ${q.img?`<img class="qimg" src="${encodeURI(q.img)}" style="width:${q.size?.[0]*0.7||560}px;margin:8px 0" alt="${esc(q.question)}">`:''}
     <div class="rv-q">내 답 <b style="color:${ok?'var(--ok)':'var(--bad)'}">${mine?CIRC[mine-1]:'—'}</b> · 정답 <b style="color:var(--ok)">${ansText(q)}</b>${Array.isArray(q.answer)?' <span class="muted">(복수 정답)</span>':''}
@@ -1425,8 +1461,11 @@ function answerBlocks(ex, withGrid, withExp){
       const ks=[]; for(let k=i;k<i+10;k++) ks.push(k);
       rows.push(`<tr>${ks.map(k=>`<th>${k<n?qLabel(p,p.questions[k],k):''}</th>`).join('')}</tr><tr>${ks.map(k=>`<td>${k<n?ansText(p.questions[k]):''}</td>`).join('')}</tr><tr>${ks.map(k=>`<td class="mk">${k<n?'○ ×':''}</td>`).join('')}</tr>`);
     }
-    out.push(`<div class="ans-block"><h4>제${p.period}교시 ${p.subject}${p.source?` <small>(${p.source} ${p.questions[0]?.book?'정답':'공식 정답'})</small>`:''}</h4>
-      <div class="ans-meta">문항당 ${ptsOf(n)}점 · 맞힌 개수 ____ / ${n} · 점수 ____ 점</div><table class="ansgrid">${rows.join('')}</table></div>`);
+    // 문항이 많으면(30문항 넘음) 정답표를 30문항씩 나눠 단·페이지를 넘어가게
+    for(let r=0;r<rows.length;r+=3){
+      out.push(`<div class="ans-block">${r?'':`<h4>제${p.period}교시 ${p.subject}${p.source?` <small>(${p.source} ${p.questions[0]?.book?'정답':'공식 정답'})</small>`:''}</h4>
+      <div class="ans-meta">문항당 ${ptsOf(n)}점 · 맞힌 개수 ____ / ${n} · 점수 ____ 점</div>`}<table class="ansgrid">${rows.slice(r,r+3).join('')}</table></div>`);
+    }
   });
   if(withExp) ex.papers.forEach(p=>{
     if(!p.questions.some(q=>q.explanation||q.expImg)) return;
