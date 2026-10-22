@@ -735,6 +735,17 @@ const OFFICIAL_KEYS = /*OFFICIAL_KEYS*/{
   "2026-1": {"국어":[2,3,4,1,2,1,4,3,2,4,3,2,4,4,1,4,1,2,3,2,3,1,4,3,4], "수학":[2,2,1,3,3,4,3,4,3,1,2,2,3,1,2,4,3,1,4,1], "영어":[1,4,3,1,3,2,3,4,2,2,4,1,3,1,2,4,4,4,3,3,2,2,1,1,2], "사회":[2,3,3,4,4,3,3,1,4,3,2,4,3,1,2,1,2,1,2,4,2,3,3,4,1], "과학":[1,2,1,2,3,4,2,4,4,1,3,1,2,4,2,1,4,1,4,3,2,3,3,3,4], "한국사":[3,3,2,1,4,1,2,1,1,2,3,1,4,1,4,2,4,1,4,2,4,3,2,4,4], "도덕":[3,1,3,4,4,4,4,1,3,1,3,1,2,2,3,1,2,3,1,2,4,2,2,4,1]},
   "2026-2": {"국어":[3,3,3,1,4,4,1,4,4,1,4,3,3,3,3,2,1,2,1,4,2,1,4,1,4], "수학":[2,3,3,2,3,1,1,4,4,2,1,3,2,4,3,2,2,4,4,1], "영어":[1,3,2,1,3,1,4,1,1,2,1,2,1,2,2,4,4,4,1,4,1,4,4,3,3], "사회":[1,1,3,4,4,2,3,2,2,3,4,1,3,4,1,3,2,3,2,1,1,4,1,4,4], "과학":[1,3,4,2,2,4,4,2,3,1,1,4,1,3,4,1,4,2,3,3,1,3,2,1,2], "한국사":[4,3,3,1,1,2,3,1,4,2,2,3,4,4,3,3,4,4,1,4,1,3,4,2,1], "도덕":[3,2,3,1,2,3,4,4,1,3,2,4,2,4,2,1,1,4,2,3,2,1,3,4,1]}
 }/*END_OFFICIAL_KEYS*/;
+/* 현재 출제 범위에서 빠진 단원 — 랜덤·회차 응시·인쇄·오답노트 어디에도 출제하지 않음 (원본 PDF는 그대로)
+   수학: 부등식의 영역(이차 연립부등식 포함), 수열, 지수, 로그 — 2018~2020년(2009 개정 교육과정) 시험에만 있음 */
+const OFFICIAL_EXCLUDED = {
+  "2018-1": {"수학": {11:"부등식의 영역(이차)", 15:"지수", 17:"수열", 18:"수열", 19:"수열", 20:"로그"}},
+  "2018-2": {"수학": {12:"부등식의 영역(이차)", 17:"수열", 18:"수열", 19:"지수", 20:"로그"}},
+  "2019-1": {"수학": {11:"부등식의 영역(이차)", 16:"수열", 17:"수열", 18:"수열", 19:"지수", 20:"로그"}},
+  "2019-2": {"수학": {11:"부등식의 영역", 15:"수열", 17:"수열", 18:"수열", 19:"지수", 20:"로그"}},
+  "2020-1": {"수학": {11:"부등식의 영역(이차)", 16:"수열", 17:"수열", 18:"수열", 19:"지수", 20:"로그"}},
+  "2020-2": {"수학": {16:"수열", 17:"수열", 18:"수열", 19:"지수", 20:"로그"}}
+};
+const isExcluded = q => !!(q.official && ((OFFICIAL_EXCLUDED[`${q.year}-${q.round}`]||{})[q.subject]||{})[q.no]);
 const officialPdf = (key, subject) => `pdf/${key}/${subject}.pdf`;
 function officialRounds(){
   return Object.keys(OFFICIAL_KEYS).sort((a,b)=>{ const [ay,ar]=a.split('-').map(Number), [by,br]=b.split('-').map(Number); return by-ay||br-ar; });
@@ -753,7 +764,7 @@ function officialQuestions(subject, key){
       img:it.img||'', size:it.size, group:g?g.id:'', groupInstr:g?g.instr:'', groupImg:g?g.img:'', groupSize:g?g.size:null,
       question:it.text || `${year}년 제${round}회 ${subject} ${i+1}번 (원본 시험지 참조)`, optText:it.options||[],
       options:['1','2','3','4'], answer:a, explanation:((OFFICIAL_EXPL[key]||{})[subject]||{})[i+1]||'', uid:`o|${subject}|${year}|${round}|${i+1}`};
-  });
+  }).filter(q=>!isExcluded(q));
 }
 /* 오답노트에 예전에 저장된 문항도 나중에 추가된 해설을 보여 주도록 매번 조회 */
 const officialExpl = q => q.explanation || (((OFFICIAL_EXPL[`${q.year}-${q.round}`]||{})[q.subject]||{})[q.no]) || '';
@@ -901,7 +912,7 @@ $('#btnStart').addEventListener('click', ()=>{
   const short=ex.papers.filter(p=>p.questions.length<SUBJ[p.subject].n);
   const go=()=>{ if(cfg.mode==='print') openPrint(ex, cfg); else beginExam(ex); };
   if(short.length){
-    modal('문항 수 안내', `DB 문항이 부족하여 다음 과목은 표준 문항 수보다 적게 출제됩니다.<br><br>${short.map(p=>`• ${p.subject}: ${p.questions.length} / ${SUBJ[p.subject].n}문항`).join('<br>')}<br><br><span class="muted">점수는 100점 만점으로 환산됩니다.</span>`,
+    modal('문항 수 안내', `${cfg.method==='official'?'현재 교육과정에 없는 단원(부등식의 영역·수열·지수·로그)을 제외하여':'DB 문항이 부족하여'} 다음 과목은 표준 문항 수보다 적게 출제됩니다.<br><br>${short.map(p=>`• ${p.subject}: ${p.questions.length} / ${SUBJ[p.subject].n}문항`).join('<br>')}<br><br><span class="muted">점수는 100점 만점으로 환산됩니다.</span>`,
       [{label:'취소'},{label:'계속',cls:'pri',onClick:go}]);
   } else go();
 });
@@ -1201,7 +1212,7 @@ function renderReview(){
 /* ---------- 오답노트 view ---------- */
 let noteFilter='all';
 function renderNotes(){
-  const notes=store.get('ged_notes',[]).sort((a,b)=>b.date-a.date);
+  const notes=store.get('ged_notes',[]).filter(n=>!isExcluded(n.q)).sort((a,b)=>b.date-a.date);
   const counts={}; notes.forEach(n=>counts[n.q.subject]=(counts[n.q.subject]||0)+1);
   $('#noteCount').textContent=`(${notes.length}문항)`;
   $('#noteTabs').innerHTML=[['all',`전체 ${notes.length}`]].concat(SUBJECTS.filter(s=>counts[s.name]).map(s=>[s.name,`${s.name} ${counts[s.name]}`]))
@@ -1217,7 +1228,7 @@ function renderNotes(){
       return `<tr><td class="muted">${fmtDate(h.date)}</td><td class="l">${esc(h.title)}</td><td>${h.mode==='cbt'?'CBT':'연습'}</td><td class="l">${h.scores.map(s=>`${s.subject} <b style="color:${s.score<40?'var(--bad)':s.score>=60?'var(--ok)':'var(--warn)'}">${s.score}</b>`).join(' · ')}</td><td><b>${avg.toFixed(1)}</b></td></tr>`;}).join('')}</table></div>`
     : '<p class="muted">아직 응시 기록이 없습니다.</p>';
 }
-function filteredNoteQs(){ return store.get('ged_notes',[]).filter(n=>noteFilter==='all'||n.q.subject===noteFilter).map(n=>n.q); }
+function filteredNoteQs(){ return store.get('ged_notes',[]).filter(n=>!isExcluded(n.q)&&(noteFilter==='all'||n.q.subject===noteFilter)).map(n=>n.q); }
 $('#noteTabs').addEventListener('click', e=>{ const b=e.target.closest('[data-nf]'); if(b){ noteFilter=b.dataset.nf; renderNotes(); } });
 $('#noteList').addEventListener('click', e=>{ const b=e.target.closest('[data-del]'); if(!b) return; store.set('ged_notes',store.get('ged_notes',[]).filter(n=>n.uid!==b.dataset.del)); renderNotes(); });
 $('#btnNoteRetry').addEventListener('click', ()=>{ const qs=filteredNoteQs(); if(qs.length) beginExam(examFromQuestions('오답노트 다시 풀기', shuffle(qs.slice()), 'practice')); });
