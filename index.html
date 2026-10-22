@@ -1,0 +1,1538 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>고졸 검정고시 AI 무한 모의고사</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=Noto+Serif+KR:wght@400;600;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f3f5f9; --card:#fff; --ink:#1a2233; --muted:#667085; --line:#e2e6ee;
+  --navy:#0f1b3d; --pri:#1f4fd1; --pri-weak:#e9effd;
+  --ok:#11805b; --ok-weak:#e5f5ee; --bad:#c62828; --bad-weak:#fdeceb;
+  --warn:#b26a00; --warn-weak:#fff3df; --omr:#d0312d; --radius:12px;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{font-family:'Noto Sans KR',system-ui,-apple-system,'Malgun Gothic',sans-serif;background:var(--bg);color:var(--ink);line-height:1.55;-webkit-font-smoothing:antialiased}
+button,select,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+a{color:var(--pri)}
+.muted{color:var(--muted)}
+.hidden{display:none!important}
+
+/* ---------- app header ---------- */
+.app-h{position:sticky;top:0;z-index:20;background:var(--navy);color:#fff;display:flex;align-items:center;gap:16px;padding:10px 20px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px;font-weight:900;font-size:17px;letter-spacing:-.02em}
+.brand .logo{width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#4f7cff,#1f4fd1);display:grid;place-items:center;font-size:16px}
+.brand small{display:block;font-weight:500;font-size:11px;color:#9fb0dc;letter-spacing:0}
+.nav{display:flex;gap:4px;margin-left:auto;flex-wrap:wrap}
+.nav button{background:transparent;border:0;color:#c3cff3;padding:8px 12px;border-radius:8px;font-weight:500}
+.nav button.on,.nav button:hover{background:rgba(255,255,255,.13);color:#fff}
+
+.view{display:none}.view.active{display:block}
+.wrap{max-width:1120px;margin:0 auto;padding:24px 16px 64px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:20px;margin-bottom:16px}
+.card h3{margin:0 0 12px;font-size:16px}
+.step{display:flex;align-items:center;gap:8px;margin:0 0 12px;font-size:15px;font-weight:700}
+.step .n{width:24px;height:24px;border-radius:50%;background:var(--pri);color:#fff;display:grid;place-items:center;font-size:12px}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--line);background:#fff;padding:9px 16px;border-radius:9px;font-weight:600;font-size:14px;white-space:nowrap}
+.btn:hover{border-color:#b9c3d6}
+.btn.pri{background:var(--pri);border-color:var(--pri);color:#fff}
+.btn.pri:hover{background:#1a43b4}
+.btn.dark{background:var(--navy);border-color:var(--navy);color:#fff}
+.btn.danger{color:var(--bad);border-color:#f2c4c2}
+.btn.ghost{background:transparent;border-color:rgba(255,255,255,.3);color:#fff}
+.btn.lg{padding:14px 26px;font-size:16px;border-radius:11px}
+.btn.sm{padding:5px 10px;font-size:12.5px;border-radius:7px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+
+/* ---------- home ---------- */
+.hero{background:linear-gradient(135deg,#0f1b3d 0%,#1d3a8a 60%,#2d5be3 100%);color:#fff;border-radius:16px;padding:28px 28px 24px;margin-bottom:18px;position:relative;overflow:hidden}
+.hero h1{margin:0 0 6px;font-size:26px;font-weight:900;letter-spacing:-.03em}
+.hero p{margin:0;color:#c9d6ff;font-size:14px}
+.hero .stats{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+.chip-stat{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);padding:4px 10px;border-radius:20px;font-size:12.5px}
+.chip-stat b{color:#fff;margin-left:3px}
+.notice{background:var(--warn-weak);border:1px solid #f5d9a8;color:#6d4500;border-radius:10px;padding:10px 14px;font-size:13px;margin-bottom:16px}
+.subj-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.subj{display:flex;flex-direction:column;align-items:flex-start;gap:2px;border:1.5px solid var(--line);background:#fff;border-radius:11px;padding:12px 14px;text-align:left;transition:.15s}
+.subj .si{font-size:20px}
+.subj .sn{font-weight:700}
+.subj .sm{font-size:12px;color:var(--muted)}
+.subj.on{border-color:var(--pri);background:var(--pri-weak);box-shadow:0 0 0 3px rgba(31,79,209,.12)}
+.subj.full{grid-column:1/-1;flex-direction:row;align-items:center;gap:12px;background:#f8f9fc}
+.subj.full.on{background:var(--pri-weak)}
+.opt-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+.ocard{border:1.5px solid var(--line);border-radius:11px;padding:14px;background:#fff;text-align:left}
+.ocard b{display:block;font-size:15px;margin-bottom:2px}
+.ocard span{font-size:12.5px;color:var(--muted)}
+.ocard.on{border-color:var(--pri);background:var(--pri-weak);box-shadow:0 0 0 3px rgba(31,79,209,.12)}
+.field{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted)}
+select,input[type=text],input[type=number],textarea{border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:#fff;font-size:14px}
+textarea{width:100%;min-height:200px;font-family:ui-monospace,Consolas,'D2Coding',monospace;font-size:13px;line-height:1.5}
+.start-bar{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.summary{font-size:14px;color:var(--muted)}
+.summary b{color:var(--ink)}
+
+/* ---------- exam ---------- */
+.exam-bar{position:sticky;top:0;z-index:30;display:flex;align-items:center;gap:14px;background:var(--navy);color:#fff;padding:10px 16px;flex-wrap:wrap}
+.eb-left{flex:1;min-width:200px}
+.eb-title{font-weight:700;font-size:15px}
+.eb-sub{display:flex;gap:4px;flex-wrap:wrap;margin-top:4px}
+.pchip{font-size:11px;padding:2px 8px;border-radius:12px;background:rgba(255,255,255,.08);color:#9fb0dc}
+.pchip.cur{background:#fff;color:var(--navy);font-weight:700}
+.pchip.done{color:#7fd8b0}
+.eb-mode{font-size:11px;padding:3px 8px;border-radius:6px;background:#2d5be3}
+.eb-timer{font-variant-numeric:tabular-nums;font-size:22px;font-weight:700;background:rgba(255,255,255,.1);padding:4px 14px;border-radius:8px;min-width:110px;text-align:center}
+.eb-timer.warn{background:var(--bad);animation:blink 1s infinite}
+@keyframes blink{50%{opacity:.75}}
+.omr-toggle{display:none}
+.exam-body{display:grid;grid-template-columns:minmax(0,1fr) 290px;gap:16px;max-width:1280px;margin:0 auto;padding:16px}
+.paper-title{display:flex;align-items:baseline;gap:12px;margin:4px 0 14px;flex-wrap:wrap}
+.paper-title h2{margin:0;font-family:'Noto Serif KR',serif;font-size:24px}
+.ptag{background:var(--navy);color:#fff;border-radius:6px;padding:2px 10px;font-size:13px}
+.grp{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px 20px;margin-bottom:10px;font-family:'Noto Serif KR',serif}
+.grp-h{font-weight:700;margin-bottom:6px}
+.qcard{background:#fff;border:1px solid var(--line);border-radius:12px;padding:18px 20px;margin-bottom:12px;font-family:'Noto Serif KR',serif;scroll-margin-top:90px}
+.qcard.flagged{border-color:#f0b54a;box-shadow:inset 4px 0 0 #f0b54a}
+.qhead{display:flex;gap:8px;align-items:flex-start}
+.qnum{font-weight:900;font-size:17px;min-width:28px}
+.qstem{flex:1;font-size:16px;font-weight:600}
+.flagbtn{border:1px solid var(--line);background:#fff;border-radius:7px;font-size:12px;padding:3px 8px;font-family:'Noto Sans KR',sans-serif;color:var(--muted)}
+.flagbtn.on{background:#fff4dc;border-color:#f0b54a;color:#8a5600}
+.passage{border:1px solid #3a3a3a;padding:12px 16px;margin:10px 0;background:#fcfcf8;font-size:15px;line-height:1.75}
+.opts{margin-top:8px}
+.opt{display:flex;gap:10px;align-items:flex-start;width:100%;text-align:left;background:#fff;border:1px solid var(--line);border-radius:9px;padding:9px 12px;margin-top:7px;font-family:'Noto Serif KR',serif;font-size:15px;transition:.12s}
+.opt:hover:not(:disabled){border-color:#9db3ee;background:#f7f9ff}
+.opt .circ{font-weight:700;min-width:20px}
+.opt.sel{border-color:var(--pri);background:var(--pri-weak);font-weight:600}
+.opt.right{border-color:var(--ok);background:var(--ok-weak)}
+.opt.wrong{border-color:var(--bad);background:var(--bad-weak)}
+.opt:disabled{cursor:default}
+.expl{margin-top:12px;border-radius:9px;padding:12px 14px;font-family:'Noto Sans KR',sans-serif;font-size:14px;background:#f6f8fc;border:1px solid var(--line)}
+.expl .tag{font-weight:700;margin-right:6px}
+.expl.ok .tag{color:var(--ok)}.expl.ng .tag{color:var(--bad)}
+.omr{position:sticky;top:76px;align-self:start;max-height:calc(100vh - 92px);display:flex;flex-direction:column;background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.omr-head{background:#fff5f5;border-bottom:2px solid var(--omr);color:var(--omr);font-weight:700;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;font-size:14px}
+.omr-body{overflow:auto;padding:4px 0}
+.omr-row{display:flex;align-items:center;gap:7px;padding:3px 12px}
+.omr-row:nth-child(5n){border-bottom:1px solid #f3d0cf}
+.omr-row .on-num{width:30px;font-weight:700;font-size:13px;color:var(--omr);cursor:pointer;text-align:right;padding-right:4px}
+.omr-row.flag .on-num::before{content:'★';color:#e69a00;margin-right:2px}
+.omr-row.ok .on-num{color:var(--ok)}.omr-row.ng .on-num{color:var(--bad)}
+.bub{width:24px;height:24px;border-radius:50%;border:1.5px solid var(--omr);color:var(--omr);display:inline-grid;place-items:center;font-size:11px;cursor:pointer;user-select:none;transition:.1s}
+.bub:hover{background:#ffecec}
+.bub.on{background:#111;border-color:#111;color:#111}
+.bub.ans{border:2px solid var(--ok);background:var(--ok-weak);color:var(--ok);font-weight:700}
+.bub.on.ans{background:var(--ok);border-color:var(--ok);color:var(--ok)}
+.qimg{display:block;max-width:100%;height:auto;margin:2px 0}
+.opts.row4{display:flex;gap:8px;flex-wrap:wrap}
+.opts.row4 .opt{width:auto;flex:1 1 60px;justify-content:center;font-size:18px;padding:8px}
+.qsrc{margin-top:8px;font-size:12px;color:var(--muted);font-family:'Noto Sans KR',sans-serif;text-align:right}
+.pdfbox{background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.pdfbox iframe{display:block;width:100%;height:calc(100vh - 170px);min-height:520px;border:0;background:#525659}
+.pdfbox .pdfbar{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:8px 12px;font-size:12.5px;color:var(--muted);border-top:1px solid var(--line)}
+.off-tag{font-size:11px;font-weight:700;color:#fff;background:#0b6b4b;border-radius:5px;padding:1px 6px}
+.off-sheet{text-align:center;font-family:'Noto Sans KR',sans-serif}
+.off-sheet h2{font-family:'Noto Serif KR',serif;font-size:22pt;margin:30mm 0 6mm}
+.omr-foot{border-top:1px solid var(--line);padding:10px 12px;font-size:13px;display:flex;flex-direction:column;gap:8px}
+.omr-foot .bar{height:6px;border-radius:4px;background:#eef1f6;overflow:hidden}
+.omr-foot .bar i{display:block;height:100%;background:var(--pri)}
+
+/* ---------- result ---------- */
+.verdict{border-radius:14px;padding:22px 24px;color:#fff;margin-bottom:16px}
+.verdict.pass{background:linear-gradient(135deg,#0b6b4b,#14a073)}
+.verdict.fail{background:linear-gradient(135deg,#8e1c1c,#d0453d)}
+.verdict.info{background:linear-gradient(135deg,#0f1b3d,#2d5be3)}
+.verdict h2{margin:0 0 4px;font-size:24px}
+.verdict .big{font-size:40px;font-weight:900;line-height:1.1}
+.verdict p{margin:6px 0 0;opacity:.9;font-size:14px}
+table.tbl{width:100%;border-collapse:collapse;font-size:14px}
+.tbl th,.tbl td{border-bottom:1px solid var(--line);padding:9px 8px;text-align:center}
+.tbl th{background:#f6f8fb;font-weight:600;color:#475467}
+.tbl td.l{text-align:left}
+.badge{display:inline-block;padding:2px 9px;border-radius:12px;font-size:12px;font-weight:700}
+.badge.ok{background:var(--ok-weak);color:var(--ok)}
+.badge.bad{background:var(--bad-weak);color:var(--bad)}
+.badge.warn{background:var(--warn-weak);color:var(--warn)}
+.badge.gray{background:#eef1f6;color:#475467}
+.sbar{height:10px;background:#eef1f6;border-radius:6px;position:relative;min-width:90px}
+.sbar i{position:absolute;left:0;top:0;bottom:0;border-radius:6px}
+.sbar::after{content:'';position:absolute;left:40%;top:-3px;bottom:-3px;border-left:2px dashed #e08a8a}
+.rv{border:1px solid var(--line);border-radius:11px;padding:14px 16px;margin-bottom:10px;background:#fff}
+.rv-h{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:13px;margin-bottom:6px}
+.rv-q{font-family:'Noto Serif KR',serif;font-weight:600}
+.rv-opts{list-style:none;padding:0;margin:8px 0;font-family:'Noto Serif KR',serif;font-size:14.5px}
+.rv-opts li{padding:3px 8px;border-radius:6px}
+.rv-opts li.ans{background:var(--ok-weak);color:#0a5c41;font-weight:700}
+.rv-opts li.mine{background:var(--bad-weak);color:var(--bad);text-decoration:line-through}
+details.psg summary{cursor:pointer;color:var(--muted);font-size:13px}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.tabs button{border:1px solid var(--line);background:#fff;border-radius:20px;padding:5px 12px;font-size:13px}
+.tabs button.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+
+/* ---------- admin ---------- */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.drop{border:2px dashed #b9c3d6;border-radius:12px;padding:26px;text-align:center;color:var(--muted);background:#fafbfd;cursor:pointer}
+.drop.over{border-color:var(--pri);background:var(--pri-weak)}
+.msg{font-size:13px;border-radius:8px;padding:10px 12px;margin-top:10px;white-space:pre-wrap}
+.msg.ok{background:var(--ok-weak);color:#0a5c41}
+.msg.bad{background:var(--bad-weak);color:var(--bad)}
+pre.fmt{background:#0f1b3d;color:#d7e1ff;border-radius:10px;padding:14px;font-size:12.5px;overflow:auto;margin:8px 0 0}
+
+/* ---------- modal ---------- */
+.modal-bg{position:fixed;inset:0;background:rgba(10,16,35,.55);display:grid;place-items:center;z-index:100;padding:16px}
+.modal{background:#fff;border-radius:14px;max-width:440px;width:100%;padding:22px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.modal h3{margin:0 0 8px}
+.modal .acts{display:flex;justify-content:flex-end;gap:8px;margin-top:18px;flex-wrap:wrap}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--navy);color:#fff;padding:10px 18px;border-radius:10px;font-size:14px;z-index:120;box-shadow:0 8px 24px rgba(0,0,0,.25)}
+
+/* ---------- print preview (screen) ---------- */
+.print-toolbar{position:sticky;top:0;z-index:30;background:var(--navy);color:#fff;padding:10px 16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.print-toolbar label{font-size:13px;display:flex;gap:5px;align-items:center;color:#d4ddfa}
+.print-area{overflow-x:auto;padding:24px 8px;background:#5b6475}
+.sheet{width:210mm;min-height:297mm;margin:0 auto 24px;background:#fff;box-shadow:0 4px 18px rgba(0,0,0,.35);padding:13mm 12mm;font-family:'Noto Serif KR','Batang',serif;color:#000;font-size:10pt;line-height:1.6}
+.ph{text-align:center;border-bottom:3px double #000;padding-bottom:5mm;margin-bottom:5mm}
+.ph-row{display:flex;justify-content:space-between;align-items:center;font-size:9.5pt}
+.ph-badge{border:2px solid #000;border-radius:20px;padding:1px 14px;font-weight:700;font-size:11pt}
+.ph-type{border:1px solid #000;padding:1px 10px;font-weight:600}
+.ph-exam{font-weight:700;font-size:11pt}
+.ph-subj{font-size:28pt;letter-spacing:.5em;margin:3mm 0 3mm .5em;font-weight:900}
+.idt{border-collapse:collapse;margin:0 auto 3mm}
+.idt th,.idt td{border:1px solid #000;height:9mm;padding:0 3mm;font-size:9pt;font-weight:600}
+.idt td{width:7mm;padding:0}
+.idt td.nm{width:38mm}
+.ph-info{font-size:8.5pt}
+/* A4 고정 페이지: 210×297mm, 2단, 블록 단위로 JS가 채움 */
+.sheet.a4{--page-h:296.5mm;height:var(--page-h);min-height:0;display:flex;flex-direction:column;padding:10mm 10mm 7mm;overflow:hidden}
+.sheet.a4 .ph{padding-bottom:3mm;margin-bottom:4mm}
+.ph-mini{display:flex;justify-content:space-between;font-size:8.5pt;font-weight:600;border-bottom:1.5px solid #000;padding-bottom:1.5mm;margin-bottom:4mm}
+.pcols{flex:1 1 0;min-height:0;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:minmax(0,1fr);column-gap:8mm;position:relative}
+.pcols::before{content:'';position:absolute;left:50%;top:0;bottom:0;border-left:1px solid #000}
+.pcol{min-height:0;overflow:hidden}
+.sheet.a4 .pcol>*{margin:0!important}   /* 간격은 padding으로만: margin은 높이 측정(scrollHeight)에 일관되게 잡히지 않음 */
+.pcol>.pq,.pcol>.pgrp,.pcol>.blk,.pcol>.ans-block,.pcol>.exp{padding-bottom:4.5mm}
+.pq-i{display:flex;gap:1.5mm;align-items:flex-start}
+.pq-n{font-size:10.5pt;min-width:5mm;line-height:1.2}
+.pq-img{display:block}
+.sheet.a4 .sheet-foot{margin-top:2mm;padding-top:1.5mm;flex:none}
+.ans-block h4 small{font-weight:400}
+.ans-meta{font-size:8.5pt;margin:0 0 1.5mm}
+.exp-h{font-size:10.5pt;font-weight:700;border-left:4px solid #000;padding:0 0 0 2mm;margin:1mm 0 3mm}
+.cols{column-count:2;column-gap:8mm;column-rule:1px solid #000}
+.pq{break-inside:avoid;margin:0 0 5mm}
+.pq-stem{font-weight:600}
+.pq-stem b{margin-right:2px}
+.pq-opts{list-style:none;padding:0 0 0 3mm;margin:1.5mm 0 0;display:grid;grid-template-columns:1fr;gap:.6mm 4mm}
+.pq-opts.g2{grid-template-columns:1fr 1fr}
+.pq-opts.g4{grid-template-columns:repeat(4,auto);justify-content:start;gap:.6mm 6mm}
+.pgrp{break-inside:avoid;margin:0 0 3mm}
+.pgrp-h{font-weight:700;margin:0 0 1.5mm}
+.ppass{border:1px solid #000;padding:2.5mm 3.5mm;margin:1.5mm 0 2.5mm;font-size:9.5pt;line-height:1.7}
+.sheet-foot{text-align:center;font-size:8pt;color:#444;margin-top:6mm;border-top:1px solid #000;padding-top:2mm;column-span:all}
+.ans-title{text-align:center;font-size:20pt;font-weight:900;letter-spacing:.3em;margin:0 0 1mm}
+.ans-sub{text-align:center;font-size:9.5pt;margin-bottom:5mm;border-bottom:3px double #000;padding-bottom:3mm}
+.ans-block{break-inside:avoid;margin-bottom:5mm}
+.ans-block h4{margin:0 0 1.5mm;font-size:11pt}
+table.ansgrid{border-collapse:collapse;width:100%;font-size:9.5pt;table-layout:fixed}
+.ansgrid th,.ansgrid td{border:1px solid #000;text-align:center;padding:1mm 0}
+.ansgrid th{background:#eee;font-weight:600}
+.ansgrid td{font-weight:700;font-size:11pt}
+.ansgrid td.mk{font-size:8pt;font-weight:400;color:#888;height:6mm}
+.exp-sec{margin-top:4mm}
+.exp-sec h4{font-size:11pt;margin:4mm 0 2mm;border-left:4px solid #000;padding-left:2mm;column-span:all}
+.exp{break-inside:avoid;margin-bottom:2.5mm;font-size:9pt;line-height:1.6}
+.exp b{font-size:9.5pt}
+.omr-sheet h2{text-align:center;margin:0 0 4mm;letter-spacing:.3em;color:#c00}
+.omr-wrap{display:flex;flex-wrap:wrap;gap:5mm;justify-content:center}
+.omr-col{border:1.5px solid #c00;padding:2mm 3mm}
+.omr-col h5{margin:0 0 2mm;text-align:center;color:#c00;font-size:10pt;border-bottom:1px solid #c00}
+.omr-line{display:flex;gap:2mm;align-items:center;font-size:8.5pt;color:#c00;height:5.4mm}
+.omr-line:nth-child(5n+1){border-bottom:1px solid #f0b0b0}
+.omr-line span{width:6mm;text-align:right;font-weight:700}
+.omr-line i{width:4mm;height:5mm;border:1px solid #c00;border-radius:2mm;font-style:normal;font-size:6.5pt;display:grid;place-items:center}
+
+/* ---------- responsive ---------- */
+@media (max-width:900px){
+  .exam-body{grid-template-columns:1fr;padding:12px}
+  .omr{position:fixed;left:0;right:0;bottom:0;top:auto;max-height:60vh;border-radius:16px 16px 0 0;transform:translateY(105%);transition:transform .25s;z-index:40;box-shadow:0 -10px 30px rgba(0,0,0,.2)}
+  .omr.open{transform:none}
+  .omr-toggle{display:inline-flex}
+  .grid2{grid-template-columns:1fr}
+  .eb-timer{font-size:18px;min-width:90px}
+}
+@media (max-width:560px){
+  .hero{padding:22px 18px}.hero h1{font-size:21px}
+  .qcard,.grp{padding:14px}
+  .tbl th,.tbl td{padding:7px 4px;font-size:12.5px}
+  .app-h{padding:10px 16px}
+}
+
+/* ---------- print ---------- */
+@media print{
+  @page{size:A4;margin:0}
+  html,body{background:#fff!important}
+  .app-h,.print-toolbar,.view:not(#view-print),.toast,.modal-bg,.sheet.screen-only{display:none!important}
+  #view-print{display:block!important}
+  .print-area{padding:0;background:#fff;overflow:visible}
+  .sheet{box-shadow:none;margin:0;width:210mm;break-after:page;page-break-after:always}
+  .sheet:last-child{break-after:auto;page-break-after:auto}
+  .pq,.pgrp,.blk,.exp,.ans-block{break-inside:avoid;page-break-inside:avoid}
+  *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+</style>
+</head>
+<body>
+
+<header class="app-h" id="appHeader">
+  <div class="brand"><div class="logo">📝</div><div>고졸 검정고시 AI 무한 모의고사<small>CBT 응시 · 종이 시험지 인쇄 · 기출 DB 관리</small></div></div>
+  <nav class="nav">
+    <button data-nav="home" class="on">🏠 모의고사 생성</button>
+    <button data-nav="notes">📒 오답노트·기록</button>
+    <button data-nav="admin">🗂 기출 DB 관리</button>
+  </nav>
+</header>
+
+<!-- ================= HOME ================= -->
+<section id="view-home" class="view active">
+  <div class="wrap">
+    <div class="hero">
+      <h1>🎲 매번 새로운 고졸 검정고시 모의고사</h1>
+      <p>기출 DB에서 과목별 표준 문항 수(국·영·사·한·도 25문항 / 수·과 20문항)를 무작위로 뽑아 새 시험지를 바로 조합합니다.</p>
+      <div class="stats" id="dbChips"></div>
+    </div>
+    <div class="notice">
+      ℹ️ <b>📄 공식 기출 원본</b>은 <a href="https://www.gumsi.or.kr/ged/usr/data/prevexamList.do" target="_blank" rel="noopener">검정고시지원센터</a>의 실제 시험지 PDF(<code>pdf/</code> 폴더)와 공식 정답표로 채점합니다.
+      🎲 랜덤 모의고사의 내장 문항은 출제 유형을 참고해 새로 작성한 <b>샘플 문항</b>이며, <a href="#" data-nav="admin">기출 DB 관리</a>에서 문항을 추가하면 랜덤 출제에 바로 반영됩니다.
+    </div>
+
+    <div class="card">
+      <div class="step"><span class="n">1</span>과목 선택 <span class="muted" style="font-weight:400;font-size:13px">(여러 과목 동시 선택 가능)</span></div>
+      <div class="subj-grid" id="subjGrid"></div>
+    </div>
+
+    <div class="card">
+      <div class="step"><span class="n">2</span>모의고사 생성 방식</div>
+      <div class="opt-cards" id="methodCards">
+        <button class="ocard on" data-method="random"><b>🎲 AI 무한 랜덤 모의고사</b><span>전체 기출 DB에서 무작위 추출해 신규 1회분 조합 (지문 세트는 묶어서 출제)</span></button>
+        <button class="ocard" data-method="official"><b>📄 공식 기출 원본 시험지</b><span>2018~2026년 실제 시험지 PDF를 보며 OMR 마킹 → 공식 정답표로 자동 채점</span></button>
+        <button class="ocard" data-method="round"><b>📅 DB 회차 풀기</b><span>텍스트 DB에 등록된 회차를 해설과 함께 응시</span></button>
+      </div>
+      <div class="row" id="scopeRow" style="margin-top:12px">
+        <label class="field">랜덤 출제 범위
+          <select id="scopeSel" style="min-width:300px">
+            <option value="official">공식 기출 문항 (2018~2026 실제 시험지에서 무작위)</option>
+            <option value="all">공식 기출 + 샘플·직접 추가 문항</option>
+            <option value="db">샘플·직접 추가 문항만 (텍스트·해설 포함)</option>
+          </select>
+        </label>
+      </div>
+      <div class="row hidden" id="roundRow" style="margin-top:12px">
+        <label class="field">회차 선택<select id="roundSel" style="min-width:300px"></select></label>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="step"><span class="n">3</span>응시 모드</div>
+      <div class="opt-cards" id="modeCards">
+        <button class="ocard on" data-mode="cbt"><b>⏱ 실전 CBT 모드</b><span>제한시간 타이머 · 우측 OMR 마킹 · 검토 표시 · 제출 후 자동 채점</span></button>
+        <button class="ocard" data-mode="practice"><b>✏️ 연습 모드</b><span>문항을 고르면 바로 정답/오답과 해설 확인</span></button>
+        <button class="ocard" data-mode="print"><b>🖨 종이 시험지 인쇄</b><span>A4 2단 시험지 + OMR 답안지 + 정답표·해설지 (PDF 저장 가능)</span></button>
+      </div>
+      <div class="row" id="timeRow" style="margin-top:12px">
+        <label class="field">과목당 제한시간
+          <select id="timeSel">
+            <option value="40" selected>40분 (기본)</option>
+            <option value="real">실제 교시별 시간 (국·수·영 40분 / 그 외 30분)</option>
+            <option value="30">30분</option>
+            <option value="60">60분</option>
+            <option value="0">무제한</option>
+          </select>
+        </label>
+      </div>
+    </div>
+
+    <div class="card start-bar">
+      <div class="summary" id="summary"></div>
+      <button class="btn pri lg" id="btnStart">시험지 생성하고 시작 ▶</button>
+    </div>
+  </div>
+</section>
+
+<!-- ================= EXAM ================= -->
+<section id="view-exam" class="view">
+  <div class="exam-bar">
+    <div class="eb-left">
+      <div class="eb-title"><span class="eb-mode" id="ebMode"></span> <span id="ebTitle"></span></div>
+      <div class="eb-sub" id="ebSub"></div>
+    </div>
+    <div class="eb-timer" id="ebTimer">40:00</div>
+    <button class="btn ghost omr-toggle" id="btnOmrToggle">📋 OMR</button>
+    <button class="btn ghost" id="btnQuit">나가기</button>
+    <button class="btn pri" id="btnSubmit">답안 제출</button>
+  </div>
+  <div class="exam-body">
+    <main id="qList"></main>
+    <aside class="omr" id="omr">
+      <div class="omr-head"><span>OMR 답안 카드</span><span id="omrSubj"></span></div>
+      <div class="omr-body" id="omrBody"></div>
+      <div class="omr-foot" id="omrFoot"></div>
+    </aside>
+  </div>
+</section>
+
+<!-- ================= RESULT ================= -->
+<section id="view-result" class="view">
+  <div class="wrap" id="resultWrap"></div>
+</section>
+
+<!-- ================= PRINT ================= -->
+<section id="view-print" class="view">
+  <div class="print-toolbar">
+    <button class="btn ghost" id="btnPrintBack">← 돌아가기</button>
+    <b id="printTitle" style="flex:1;min-width:160px"></b>
+    <label><input type="checkbox" id="pOmr" checked> OMR 답안지</label>
+    <label><input type="checkbox" id="pAns" checked> 정답표</label>
+    <label><input type="checkbox" id="pExp" checked> 상세 해설</label>
+    <button class="btn ghost" id="btnPrintRegen">🎲 다른 문제로 재생성</button>
+    <button class="btn pri" id="btnDoPrint">🖨 인쇄 / PDF 저장</button>
+  </div>
+  <div class="print-area" id="printArea"></div>
+</section>
+
+<!-- ================= NOTES ================= -->
+<section id="view-notes" class="view">
+  <div class="wrap">
+    <div class="card">
+      <div class="row" style="justify-content:space-between">
+        <h3 style="margin:0">📒 오답노트 <span class="muted" id="noteCount" style="font-weight:400;font-size:14px"></span></h3>
+        <div class="row">
+          <button class="btn pri" id="btnNoteRetry">✏️ 오답 다시 풀기 (연습)</button>
+          <button class="btn" id="btnNotePrint">🖨 오답 시험지 인쇄</button>
+          <button class="btn danger" id="btnNoteClear">전체 삭제</button>
+        </div>
+      </div>
+      <p class="muted" style="font-size:13px;margin:6px 0 12px">채점 후 틀린 문항은 자동으로 저장됩니다. ‘다시 풀기’에서 맞힌 문항은 오답노트에서 빠집니다.</p>
+      <div class="tabs" id="noteTabs"></div>
+      <div id="noteList"></div>
+    </div>
+    <div class="card">
+      <h3>🕘 응시 기록</h3>
+      <div id="historyList"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= ADMIN ================= -->
+<section id="view-admin" class="view">
+  <div class="wrap">
+    <div class="card">
+      <h3>📊 기출 문제 DB 현황</h3>
+      <div style="overflow-x:auto"><table class="tbl" id="dbTable"></table></div>
+    </div>
+    <div class="grid2">
+      <div class="card">
+        <h3>📂 JSON 파일 업로드</h3>
+        <label class="drop" id="drop">
+          <input type="file" id="fileIn" accept=".json,.txt,application/json,text/plain" multiple hidden>
+          <div style="font-size:28px">⬆️</div>
+          <div><b>JSON / 텍스트 파일</b>을 끌어다 놓거나 클릭해서 선택</div>
+          <div style="font-size:12px;margin-top:4px">여러 파일 동시 업로드 가능 · 단일 회차 객체, 배열, {"sets":[...]} 모두 지원</div>
+        </label>
+        <div id="fileMsg"></div>
+        <div class="row" style="margin-top:12px">
+          <button class="btn" id="btnTemplate">📄 JSON 템플릿 받기</button>
+          <button class="btn" id="btnExport">💾 사용자 DB 내보내기</button>
+          <button class="btn danger" id="btnResetDb">사용자 DB 초기화</button>
+        </div>
+      </div>
+      <div class="card">
+        <h3>📋 텍스트 붙여넣기</h3>
+        <textarea id="pasteIn" placeholder="JSON 또는 간편 텍스트 형식을 붙여넣으세요."></textarea>
+        <div class="row" style="margin-top:10px;justify-content:space-between">
+          <span class="muted" style="font-size:12.5px">형식 자동 감지 (JSON ↔ 간편 텍스트)</span>
+          <div class="row"><button class="btn" id="btnPastePreview">검사</button><button class="btn pri" id="btnPasteSave">DB에 추가</button></div>
+        </div>
+        <div id="pasteMsg"></div>
+      </div>
+    </div>
+    <div class="card">
+      <h3>✍️ 간편 텍스트 형식</h3>
+      <p class="muted" style="font-size:13px;margin:0">PDF 기출문제를 복사해 아래처럼 정리하면 바로 등록됩니다. <b>지문:</b>은 <b>지문끝</b>이 나올 때까지 이어지는 문항에 공통으로 붙고, <code>__밑줄__</code>은 밑줄로 표시됩니다.</p>
+<pre class="fmt">과목: 국어
+연도: 2024
+회차: 1
+지문: 나 보기가 역겨워
+가실 때에는 ...
+1. 윗글에 대한 설명으로 적절하지 않은 것은?
+① 수미상관 구조이다.
+② 3음보 율격이다.
+③ 화자는 이별을 기뻐한다.
+④ 반어적 표현이 쓰였다.
+정답: 3
+해설: 화자는 이별의 슬픔을 반어적으로 절제하고 있다.
+지문끝
+2. 다음 중 표준 발음으로 옳은 것은?
+① 굳이[구디]  ② 같이[가티]  ③ 넓다[널따]  ④ 밟다[발따]
+정답: ③
+해설: ...</pre>
+    </div>
+    <div class="card">
+      <h3>🗃 사용자 추가 회차 목록</h3>
+      <div id="userSetList"></div>
+    </div>
+  </div>
+</section>
+
+<!-- 공식 기출 문항 이미지 DB (tools/build_questions.py 로 생성, 없으면 정답표만 사용) -->
+<script src="pdf/questions.js"></script>
+<!-- 공식 기출 해설 (tools/embed_explanations.mjs 로 생성) -->
+<script src="pdf/explanations.js"></script>
+<script>
+/* =====================================================================
+   1. 기본 설정
+   ===================================================================== */
+const SUBJECTS = [
+  {name:'국어',  n:25, period:1, real:40, icon:'📖'},
+  {name:'수학',  n:20, period:2, real:40, icon:'📐'},
+  {name:'영어',  n:25, period:3, real:40, icon:'🔤'},
+  {name:'사회',  n:25, period:4, real:30, icon:'🌏'},
+  {name:'과학',  n:25, period:5, real:30, icon:'🔬'},
+  {name:'한국사',n:25, period:6, real:30, icon:'🏯'},
+  {name:'도덕',  n:25, period:7, real:30, icon:'⚖️'}
+];
+const SUBJ = Object.fromEntries(SUBJECTS.map(s => [s.name, s]));
+const CIRC = ['①','②','③','④','⑤'];
+const SUBJ_ALIAS = {'국어':'국어','수학':'수학','영어':'영어','사회':'사회','통합사회':'사회','과학':'과학','통합과학':'과학','한국사':'한국사','도덕':'도덕','윤리':'도덕','생활과윤리':'도덕','생활과 윤리':'도덕'};
+
+/* =====================================================================
+   2. 내장 샘플 문항 (기출 유형 재구성)
+   형식: [지문, 발문, [보기1~4], 정답(1~4), 해설]
+   ===================================================================== */
+const P_POEM = "나 보기가 역겨워\n가실 때에는\n말없이 고이 보내 드리우리다\n\n영변에 약산\n진달래꽃\n아름 따다 가실 길에 뿌리우리다\n\n가시는 걸음걸음\n놓인 그 꽃을\n사뿐히 즈려밟고 가시옵소서\n\n나 보기가 역겨워\n가실 때에는\n__죽어도 아니 눈물 흘리우리다__\n\n- 김소월, 「진달래꽃」 -";
+const P_HB = "흥부 내외가 박 한 통을 따 놓고 톱을 걸어 마주 앉아 “슬근슬근 톱질이야, 당기어라 톱질이야.” 하며 박을 타니, 박이 쩍 벌어지며 청의동자 한 쌍이 나와 온갖 귀한 약을 내어 놓는다. 둘째 통을 타니 온갖 세간과 비단이 쏟아져 나오고, 셋째 통을 타니 목수들이 나와 고대광실 좋은 집을 뚝딱 지어 놓는다. 흥부 내외가 좋아라고 덩실덩실 춤을 추니, 이는 지난봄 다리 부러진 제비를 정성껏 고쳐 준 보답이었다.\n\n- 작자 미상, 「흥부전」(현대어 각색) -";
+const P_CARBON = "탄소 중립이란 배출한 이산화 탄소의 양만큼 다시 흡수하거나 제거하여 실질적인 배출량을 0으로 만드는 것을 말한다. 이를 위해서는 먼저 석탄, 석유와 같은 화석 연료의 사용을 줄이고 태양광, 풍력 등 재생 에너지의 비중을 늘려야 한다. 또한 숲을 조성하여 이산화 탄소 흡수원을 확대하거나, 공장에서 배출되는 탄소를 포집하여 저장하는 기술을 활용할 수도 있다. 개인 차원에서는 대중교통 이용하기, 일회용품 사용 줄이기, 사용하지 않는 전기 기기의 플러그 뽑기 등을 실천할 수 있다.";
+const P_RAIN = "새침하게 흐린 품이 눈이 올 듯하더니 눈은 아니 오고 얼다가 만 비가 추적추적 내리는 날이었다. 이날이야말로 동소문 안에서 인력거꾼 노릇을 하는 김 첨지에게는 오래간만에도 닥친 운수 좋은 날이었다.\n(중략)\n그러나 김 첨지의 마음 한구석에는 앓아누운 아내의 얼굴이 자꾸만 떠올랐다. 아내는 며칠 전부터 설렁탕 국물이 마시고 싶다고 남편을 졸랐던 것이다. 손님을 연이어 태우고 돈이 손에 쥐어질수록 김 첨지의 가슴속에 스며드는 불안은 오히려 점점 커져 갔다.\n\n- 현진건, 「운수 좋은 날」(일부 각색) -";
+const P_JISU = "Jisu volunteers at an animal shelter every Saturday. She feeds the dogs, cleans their cages, and takes them for walks. At first, she was scared of big dogs, but now she loves them all. She wants to become a veterinarian in the future.";
+
+const RAW = {
+'국어': [
+["지영: 어제 발표 준비하느라 밤을 새웠어. 너무 피곤해.\n민수: 정말 고생 많았겠다. 그렇게 열심히 준비했으니 분명 좋은 결과가 있을 거야.", "다음 대화에서 ‘민수’의 말하기에 대한 설명으로 가장 적절한 것은?", ["상대의 잘못을 지적하며 충고하고 있다.","상대의 말에 공감하며 격려하고 있다.","대화의 화제를 다른 쪽으로 전환하고 있다.","자신의 경험을 과장하여 드러내고 있다."], 2, "민수는 ‘고생 많았겠다’로 지영의 상황에 공감하고, ‘좋은 결과가 있을 거야’로 격려하고 있습니다."],
+["", "다음 중 표준 발음으로 옳은 것은?", ["굳이[구디]","같이[가티]","넓다[널따]","밟다[발따]"], 3, "‘넓다’는 겹받침 ‘ㄼ’이 자음 앞에서 [ㄹ]로 발음되어 [널따]입니다. 굳이[구지], 같이[가치]는 구개음화가 일어나며, ‘밟다’는 예외적으로 [밥ː따]로 발음합니다."],
+["", "‘국물[궁물]’에서 일어난 음운 변동으로 옳은 것은?", ["비음화","유음화","구개음화","두음 법칙"], 1, "받침 ‘ㄱ’이 뒤의 비음 ‘ㅁ’의 영향으로 비음 ‘ㅇ’으로 바뀌는 비음화입니다."],
+["", "다음 중 객체 높임 표현이 쓰인 문장은?", ["선생님께서 교실에 들어오셨다.","아버지께서 진지를 드신다.","손님, 이쪽으로 앉으십시오.","할머니를 모시고 병원에 갔다."], 4, "‘모시다’는 문장의 목적어인 ‘할머니’를 높이는 객체 높임 표현입니다. ①②는 주체 높임, ③은 상대 높임입니다."],
+["", "다음 중 한글 맞춤법에 맞게 쓴 것은?", ["몇일 동안 비가 왔다.","오랜만에 친구를 만났다.","정말 어의없는 일이다.","일이 금새 끝났다."], 2, "‘오랜만에’가 바른 표기입니다. ‘며칠’, ‘어이없는’, ‘금세’가 올바른 표기입니다."],
+["", "훈민정음의 제자 원리에 대한 설명으로 옳은 것은?", ["모음 기본자는 ‘ㅏ, ㅓ, ㅗ’이다.","‘ㅋ’은 ‘ㄱ’에 이체의 원리를 적용하여 만들었다.","자음 기본자는 발음 기관의 모양을 본떠 만들었다.","중성자는 모두 17자로 이루어져 있다."], 3, "자음 기본자 ‘ㄱ, ㄴ, ㅁ, ㅅ, ㅇ’은 발음 기관을 상형하여 만들었습니다. 모음 기본자는 ‘·, ㅡ, ㅣ’이고, ‘ㅋ’은 가획의 원리, 중성자는 11자입니다."],
+["", "다음 중 의미가 중복된 표현이 없는 문장은?", ["역전 앞에서 만나자.","어제 미리 예습을 했다.","그는 과반수 이상의 찬성을 얻었다.","우리는 회의를 마치고 귀가했다."], 4, "‘역전 앞’, ‘미리 예습’, ‘과반수 이상’은 같은 의미가 겹치는 중복 표현입니다."],
+[P_POEM, "윗글에 대한 설명으로 적절하지 않은 것은?", ["처음과 끝에 비슷한 구절을 반복하는 수미상관 구조이다.","3음보의 율격으로 민요적 리듬감을 형성한다.","화자는 이별 상황에서 기쁨을 적극적으로 드러내고 있다.","반어적 표현을 통해 이별의 슬픔을 절제하고 있다."], 3, "화자는 이별의 슬픔을 반어적으로 절제하며 표현할 뿐, 기쁨을 드러내지 않습니다."],
+[P_POEM, "윗글에서 ‘진달래꽃’이 상징하는 바로 가장 적절한 것은?", ["임의 냉정한 태도","화자의 분신이자 임에 대한 사랑","계절의 변화와 자연의 순환","고향에 대한 그리움"], 2, "진달래꽃은 떠나는 임의 길에 뿌리는 꽃으로, 임에 대한 화자의 헌신적 사랑과 분신을 상징합니다."],
+[P_POEM, "밑줄 친 ‘죽어도 아니 눈물 흘리우리다’에 쓰인 표현법으로 가장 적절한 것은?", ["직유법","의인법","반어법","대구법"], 3, "실제로는 몹시 슬프지만 ‘눈물을 흘리지 않겠다’고 반대로 말하는 반어법입니다."],
+[P_HB, "윗글의 특징으로 가장 적절한 것은?", ["서술자가 작품 속 인물로 등장하여 사건을 전달한다.","판소리의 영향을 받아 운율감 있는 문체가 나타난다.","사건이 시간의 역순으로 전개된다.","주인공의 비극적 죽음으로 마무리된다."], 2, "「흥부전」은 판소리계 소설로, ‘슬근슬근 톱질이야’처럼 율문체와 반복으로 운율감이 나타납니다."],
+[P_HB, "윗글에서 ‘박’의 기능으로 가장 적절한 것은?", ["흥부의 선행에 대한 보상","놀부의 탐욕을 드러내는 소재","형제 갈등의 직접적 원인","흥부가 가난해진 까닭"], 1, "다리 부러진 제비를 고쳐 준 선행의 보답으로 박에서 재물이 나오므로, 선행에 대한 보상입니다."],
+[P_HB, "「흥부전」의 주제로 가장 적절한 것은?", ["권선징악과 형제간의 우애","신분 상승의 좌절","자연 속 은거의 즐거움","임금에 대한 충성"], 1, "착한 흥부는 복을 받고 욕심 많은 놀부는 벌을 받는 권선징악과 형제간의 우애가 주제입니다."],
+[P_CARBON, "윗글의 내용과 일치하는 것은?", ["탄소 중립은 이산화 탄소 배출을 법으로 완전히 금지하는 것이다.","재생 에너지의 비중을 줄여야 탄소 중립에 도달할 수 있다.","개인의 실천은 탄소 중립과 관련이 없다.","숲을 조성하는 것은 이산화 탄소 흡수원을 늘리는 방법이다."], 4, "2문단에서 ‘숲을 조성하여 이산화 탄소 흡수원을 확대’한다고 하였습니다."],
+[P_CARBON, "윗글의 내용 전개 방식으로 가장 적절한 것은?", ["대상의 변화 과정을 시간 순서대로 서술하고 있다.","두 대상의 공통점과 차이점을 비교하고 있다.","개념을 정의한 뒤 이를 실현하기 위한 방법을 제시하고 있다.","전문가의 견해를 인용하여 반론을 제기하고 있다."], 3, "‘탄소 중립이란 ~을 말한다’로 개념을 정의한 뒤, 국가·기술·개인 차원의 실현 방법을 제시하고 있습니다."],
+[P_CARBON, "윗글을 바탕으로 할 때, 개인이 실천할 수 있는 일로 가장 적절한 것은?", ["가까운 거리는 걷거나 자전거를 이용한다.","일회용 컵을 자주 사용한다.","빈 교실의 전등을 켜 둔다.","가까운 거리도 자가용을 이용한다."], 1, "걷기나 자전거 이용은 화석 연료 사용을 줄여 탄소 배출을 줄이는 실천입니다."],
+["민호는 운전면허 시험에서 여러 번 떨어졌지만 포기하지 않고 계속 도전하여 마침내 합격하였다.", "다음 상황에 어울리는 한자 성어로 가장 적절한 것은?", ["우유부단(優柔不斷)","동문서답(東問西答)","칠전팔기(七顚八起)","아전인수(我田引水)"], 3, "칠전팔기는 ‘일곱 번 넘어져도 여덟 번 일어난다’는 뜻으로, 여러 번 실패해도 굴하지 않고 도전함을 이릅니다."],
+["논제: 학교 내 휴대 전화 사용을 전면 금지해야 한다.", "다음 토론에서 반대 측의 근거로 가장 적절한 것은?", ["휴대 전화 사용은 수업 집중을 방해한다.","휴대 전화는 긴급 상황에서 보호자와 연락하는 데 필요하다.","휴대 전화로 인한 사이버 폭력이 늘고 있다.","쉬는 시간에 학생들 간 대화가 줄어든다."], 2, "①③④는 금지에 찬성하는 근거이고, ②는 휴대 전화의 필요성을 들어 전면 금지에 반대하는 근거입니다."],
+["", "단어 간의 의미 관계가 나머지와 다른 것은?", ["남자 - 여자","위 - 아래","꽃 - 장미","살다 - 죽다"], 3, "‘꽃 - 장미’는 상하 관계이고, 나머지는 반의 관계입니다."],
+["", "‘ ’ 안의 단어 중 품사가 나머지와 다른 것은?", ["‘새’ 옷을 샀다.","‘헌’ 책을 팔았다.","‘이’ 사람이 내 친구다.","날씨가 ‘아주’ 좋다."], 4, "‘아주’는 용언을 꾸미는 부사이고, ‘새, 헌, 이’는 체언을 꾸미는 관형사입니다."],
+[P_RAIN, "윗글의 제목에 담긴 표현 방식으로 가장 적절한 것은?", ["반어","직유","과장","설의"], 1, "돈을 많이 번 ‘운수 좋은 날’은 결국 아내가 죽는 가장 불행한 날이 되므로, 제목은 반어적 표현입니다."],
+[P_RAIN, "윗글에서 ‘비가 추적추적 내리는 날’이라는 배경의 역할로 가장 적절한 것은?", ["인물의 밝은 미래를 암시한다.","사건의 비극적 분위기를 조성한다.","계절적 배경의 아름다움을 강조한다.","인물 간의 갈등을 해소한다."], 2, "음산하게 내리는 비는 앞으로 닥칠 비극을 암시하며 우울한 분위기를 조성합니다."],
+[P_RAIN, "윗글에 나타난 ‘김 첨지’의 심리로 가장 적절한 것은?", ["아내에 대해 전혀 관심을 두지 않는다.","손님이 없어 크게 실망하고 있다.","자신의 직업에 큰 만족을 느끼고 있다.","돈을 벌수록 아내에 대한 걱정과 불안이 커진다."], 4, "‘돈이 손에 쥐어질수록 … 불안은 오히려 점점 커져 갔다’에서 아내에 대한 걱정과 불안을 알 수 있습니다."],
+["청산리(靑山裏) 벽계수(碧溪水)야 수이 감을 자랑 마라\n일도창해(一到滄海)하면 다시 오기 어려우니\n명월(明月)이 만공산(滿空山)하니 쉬어 간들 어떠리\n\n- 황진이 -", "다음 작품에 대한 설명으로 적절하지 않은 것은?", ["3장 6구의 평시조이다.","‘벽계수’와 ‘명월’은 중의적 표현이다.","종장의 첫 음보는 3음절로 되어 있다.","화자는 자연을 떠나 속세로 가고자 한다."], 4, "화자는 떠나려는 ‘벽계수’에게 쉬어 가기를 권하고 있으며, 속세로 가려는 태도는 나타나지 않습니다."],
+["", "다음 중 띄어쓰기가 바른 것은?", ["나는 할수 있다.","먹을 만큼 먹어라.","그 사람 밖에 없다.","떠난지 오래되었다."], 2, "의존 명사 ‘만큼’은 앞말과 띄어 씁니다. ‘할 수’, ‘사람밖에’(조사), ‘떠난 지’(의존 명사)가 바릅니다."]
+],
+'수학': [
+["", "두 다항식 A = x² + 3, B = 2x² − 1에 대하여 A + B는?", ["3x² + 2","3x² + 4","x² + 2","2x² + 2"], 1, "A + B = (x² + 3) + (2x² − 1) = 3x² + 2"],
+["", "(x + 2)(x − 3)을 전개한 것은?", ["x² + x − 6","x² − x − 6","x² − 5x + 6","x² + 5x − 6"], 2, "(x + 2)(x − 3) = x² − 3x + 2x − 6 = x² − x − 6"],
+["", "다항식 P(x) = x³ − 2x + 5를 x − 1로 나누었을 때의 나머지는?", ["2","3","4","5"], 3, "나머지정리에 의해 P(1) = 1 − 2 + 5 = 4"],
+["", "x² − 9를 인수분해한 것은?", ["(x − 3)²","(x + 9)(x − 1)","(x − 9)(x + 1)","(x + 3)(x − 3)"], 4, "a² − b² = (a + b)(a − b)이므로 x² − 9 = (x + 3)(x − 3)"],
+["", "(2 + i) + (1 − 3i)를 계산한 것은? (단, i = √−1)", ["3 − 2i","3 + 2i","1 − 2i","3 − 4i"], 1, "실수부: 2 + 1 = 3, 허수부: 1 − 3 = −2 → 3 − 2i"],
+["", "(1 + i)²의 값은? (단, i = √−1)", ["2","−2","2i","0"], 3, "(1 + i)² = 1 + 2i + i² = 1 + 2i − 1 = 2i"],
+["", "이차방정식 x² − 5x + 6 = 0의 두 근의 합은?", ["−5","−6","6","5"], 4, "근과 계수의 관계에서 두 근의 합 = −(−5)/1 = 5 (실제 두 근은 2, 3)"],
+["", "이차함수 y = x² − 4x + 3의 그래프의 꼭짓점의 좌표는?", ["(−2, 1)","(2, −1)","(2, 3)","(4, 3)"], 2, "y = (x − 2)² − 1이므로 꼭짓점은 (2, −1)"],
+["", "부등식 |x − 1| < 2의 해는?", ["−1 < x < 3","x < −1 또는 x > 3","−3 < x < 1","1 < x < 3"], 1, "−2 < x − 1 < 2 → −1 < x < 3"],
+["", "좌표평면 위의 두 점 A(1, 2), B(4, 6) 사이의 거리는?", ["3","4","5","7"], 3, "AB = √((4−1)² + (6−2)²) = √(9 + 16) = 5"],
+["", "두 점 A(2, 4), B(6, 0)을 이은 선분 AB의 중점의 좌표는?", ["(2, 4)","(4, 2)","(8, 4)","(3, 1)"], 2, "중점 = ((2+6)/2, (4+0)/2) = (4, 2)"],
+["", "직선 y = 2x + 1에 평행하고 점 (0, 3)을 지나는 직선의 방정식은?", ["y = −2x + 3","y = x + 3","y = 2x − 3","y = 2x + 3"], 4, "평행하면 기울기가 2로 같고, y절편이 3이므로 y = 2x + 3"],
+["", "원 (x − 1)² + (y + 2)² = 9의 중심과 반지름은?", ["중심 (1, −2), 반지름 3","중심 (−1, 2), 반지름 3","중심 (1, −2), 반지름 9","중심 (−1, 2), 반지름 9"], 1, "(x − a)² + (y − b)² = r²에서 중심 (a, b) = (1, −2), r² = 9이므로 반지름 3"],
+["", "점 (2, 3)을 x축에 대하여 대칭이동한 점의 좌표는?", ["(−2, 3)","(−2, −3)","(2, −3)","(3, 2)"], 3, "x축 대칭이동은 y좌표의 부호만 바뀌므로 (2, −3)"],
+["", "두 집합 A = {1, 2, 3, 4}, B = {3, 4, 5}에 대하여 A ∩ B는?", ["{1, 2}","{3, 4}","{5}","{1, 2, 3, 4, 5}"], 2, "A와 B에 공통으로 속하는 원소는 3, 4"],
+["", "명제 ‘x = 2이면 x² = 4이다.’의 역은?", ["x ≠ 2이면 x² ≠ 4이다.","x² ≠ 4이면 x ≠ 2이다.","x² = 4이면 x = 2이다.","x = 2이면 x² ≠ 4이다."], 3, "‘p이면 q이다’의 역은 ‘q이면 p이다’입니다. ①은 이, ②는 대우입니다."],
+["", "두 함수 f(x) = 2x + 1, g(x) = x²에 대하여 (g∘f)(1)의 값은?", ["3","4","6","9"], 4, "f(1) = 3이므로 (g∘f)(1) = g(3) = 9"],
+["", "함수 f(x) = 3x − 6의 역함수를 f⁻¹(x)라 할 때, f⁻¹(0)의 값은?", ["−6","0","2","6"], 3, "f⁻¹(0) = a라 하면 f(a) = 0, 3a − 6 = 0이므로 a = 2"],
+["", "유리함수 y = 1/(x − 2) + 3의 그래프의 점근선의 방정식은?", ["x = −2, y = 3","x = 2, y = 3","x = 3, y = 2","x = −2, y = −3"], 2, "y = k/(x − p) + q의 점근선은 x = p, y = q이므로 x = 2, y = 3"],
+["", "학생 5명 중에서 대표 2명을 뽑는 경우의 수는?", ["5","20","10","25"], 3, "순서를 생각하지 않으므로 조합: ₅C₂ = (5×4)/(2×1) = 10"]
+],
+'영어': [
+["", "다음 밑줄 친 부분의 의미로 가장 적절한 것은?\nMy father decided to __give up__ smoking for his health.", ["시작하다","포기하다","연기하다","기억하다"], 2, "give up은 ‘포기하다, 그만두다’라는 뜻입니다. (아버지는 건강을 위해 담배를 끊기로 했다.)"],
+["", "다음 밑줄 친 부분의 의미로 가장 적절한 것은?\nShe is very __diligent__. She studies hard every day.", ["게으른","친절한","부지런한","용감한"], 3, "diligent는 ‘부지런한, 성실한’이라는 뜻입니다."],
+["", "다음 밑줄 친 부분의 의미로 가장 적절한 것은?\nWe need to __reduce__ plastic waste to protect the ocean.", ["줄이다","늘리다","재사용하다","버리다"], 1, "reduce는 ‘줄이다’라는 뜻입니다."],
+["", "두 단어의 의미 관계가 나머지 셋과 다른 것은?", ["hot - cold","happy - glad","big - small","fast - slow"], 2, "happy - glad는 유의어 관계이고, 나머지는 반의어 관계입니다."],
+["A: How about going to the movies tonight?\nB: ________ I have to finish my homework.", "다음 대화의 빈칸에 들어갈 말로 가장 적절한 것은?", ["Sure, I'd love to.","Sorry, I can't.","That sounds great.","Of course, let's go."], 2, "뒤에 ‘숙제를 끝내야 한다’는 이유가 이어지므로 거절의 표현이 알맞습니다."],
+["", "다음 빈칸에 들어갈 말로 가장 적절한 것은?\nI have lived in Seoul ______ 2015.", ["for","during","since","when"], 3, "현재완료와 함께 ‘~이후로’ 특정 시점을 나타낼 때는 since를 씁니다."],
+["", "다음 빈칸에 들어갈 말로 가장 적절한 것은?\nIf I ______ rich, I would travel around the world.", ["is","were","will be","being"], 2, "가정법 과거(If + 주어 + 과거동사, 주어 + would + 동사원형)에서 be동사는 were를 씁니다."],
+["", "다음 빈칸에 들어갈 말로 가장 적절한 것은?\nThis book ______ by many students every year.", ["reads","reading","has read","is read"], 4, "책이 ‘읽히는’ 것이므로 수동태(be + p.p.) is read가 알맞습니다."],
+["A: Can I see your passport and boarding pass?\nB: Here they are.\nA: Thank you. Your gate is number 12.", "다음 대화가 이루어지는 장소로 가장 적절한 곳은?", ["병원","도서관","공항","식당"], 3, "passport(여권), boarding pass(탑승권), gate(탑승구)로 보아 공항입니다."],
+["A: Guess what? You won first prize in the contest!\nB: Really? I can't believe it! Thank you so much!", "다음 대화에서 B의 심정으로 가장 적절한 것은?", ["excited","bored","angry","worried"], 1, "1등 소식에 ‘믿을 수 없다’며 기뻐하므로 excited(신난, 들뜬)가 알맞습니다."],
+["School Science Fair\n• Date: May 20\n• Place: School Gym\n• Who: All students\n• Register by May 10 at the teacher's office\n• Prize: Gift cards for the top 3 teams", "다음 안내문의 내용과 일치하지 않는 것은?", ["학교 체육관에서 열린다.","5월 10일까지 교무실에서 등록한다.","상위 3팀에게 상품권을 준다.","참가비는 5달러이다."], 4, "참가비에 대한 내용은 안내문에 나와 있지 않습니다."],
+["Dear neighbors,\nPlease do not leave your trash in front of the building. It smells bad and attracts stray cats. Please use the recycling area behind the building.\nThank you.", "다음 글의 목적으로 가장 적절한 것은?", ["이웃 간 친목 모임을 안내하려고","건물 앞에 쓰레기를 두지 말 것을 요청하려고","고양이 입양을 홍보하려고","재활용 방법의 변경을 사과하려고"], 2, "건물 앞에 쓰레기를 두지 말고 건물 뒤 재활용 구역을 이용해 달라고 요청하는 글입니다."],
+["Reading books has many benefits. It improves your vocabulary and helps you reduce stress. It also helps you understand other people's feelings.", "다음 글의 주제로 가장 적절한 것은?", ["the history of books","how to write a book","benefits of reading","popular libraries"], 3, "독서가 어휘력 향상, 스트레스 감소, 공감 능력에 도움이 된다는 ‘독서의 이점’이 주제입니다."],
+["My brother bought a new bike last week. He rides __it__ to school every day.", "다음 글에서 밑줄 친 it이 가리키는 것은?", ["school","brother","new bike","every day"], 3, "그가 매일 학교에 타고 가는 것은 지난주에 산 새 자전거(new bike)입니다."],
+["", "다음 빈칸에 들어갈 말로 가장 적절한 것은?\nI was very tired. ______, I finished my homework.", ["However","Because","For example","So"], 1, "피곤했지만 숙제를 끝냈다는 역접 관계이므로 However(그러나)가 알맞습니다."],
+["How to make a cake\n(A) Then, put it in the oven for 30 minutes.\n(B) First, mix flour, sugar and eggs in a bowl.\n(C) Finally, take it out and enjoy your cake.", "다음 글을 자연스러운 순서로 배열한 것은?", ["(A) - (B) - (C)","(B) - (A) - (C)","(B) - (C) - (A)","(C) - (A) - (B)"], 2, "First(B) → Then(A) → Finally(C)의 순서입니다."],
+["Exercise is good for your health. ① It makes your heart strong. ② It helps you sleep well. ③ My favorite color is blue. ④ It also reduces stress.", "다음 글에서 전체 흐름과 관계없는 문장은?", ["①","②","③","④"], 3, "운동의 이점에 관한 글이므로 ‘좋아하는 색은 파란색이다’는 흐름과 관계없습니다."],
+["Making mistakes is a natural part of learning. Don't be afraid of them. Instead, think about why you made them and learn from them.", "다음 글의 요지로 가장 적절한 것은?", ["실수는 반드시 피해야 한다.","공부는 혼자 하는 것이 좋다.","선생님의 말씀을 잘 들어라.","실수를 두려워하지 말고 배움의 기회로 삼아라."], 4, "실수를 두려워하지 말고 그로부터 배우라는 것이 요지입니다."],
+["", "다음 빈칸에 들어갈 말로 가장 적절한 것은?\nTo stay healthy, you should eat a ______ diet.", ["balanced","dangerous","expensive","boring"], 1, "건강을 유지하려면 균형 잡힌(balanced) 식사를 해야 합니다."],
+["A: Oh no, I lost my wallet.\nB: ________", "다음 대화의 빈칸에 들어갈 말로 가장 적절한 것은?", ["Congratulations!","That's too bad. Let me help you look for it.","Nice to meet you.","I like your wallet."], 2, "지갑을 잃어버린 상대에게 위로하며 도와주겠다는 응답이 자연스럽습니다."],
+["", "다음 중 어법상 옳은 문장은?", ["He doesn't like coffee.","She don't like coffee.","They likes coffee.","I is a student."], 1, "3인칭 단수 주어 He에는 doesn't를 씁니다. ② doesn't, ③ like, ④ am이 옳습니다."],
+[P_JISU, "윗글의 Jisu에 대한 내용으로 일치하지 않는 것은?", ["매주 토요일에 동물 보호소에서 봉사한다.","개들에게 먹이를 준다.","처음부터 큰 개를 좋아했다.","미래에 수의사가 되고 싶어 한다."], 3, "‘At first, she was scared of big dogs’라고 했으므로 처음에는 큰 개를 무서워했습니다."],
+[P_JISU, "윗글에서 Jisu의 장래 희망으로 알맞은 것은?", ["teacher","nurse","police officer","veterinarian"], 4, "‘She wants to become a veterinarian’에서 수의사임을 알 수 있습니다."],
+["", "다음 빈칸에 들어갈 말로 가장 적절한 것은?\nRecycling helps ______ the environment.", ["destroy","protect","waste","pollute"], 2, "재활용은 환경을 보호하는(protect) 데 도움이 됩니다."],
+["NO PARKING\n(Violators will be towed.)", "다음 표지판이 의미하는 것으로 가장 적절한 것은?", ["주차 금지","흡연 금지","통행 금지","촬영 금지"], 1, "NO PARKING은 ‘주차 금지’입니다. (위반 차량은 견인됩니다.)"]
+],
+'사회': [
+["○○ 지역의 문제를 파악하기 위해 그 지역이 과거에 어떤 과정을 거쳐 형성되었는지 역사적 배경을 조사하였다.", "다음과 같이 사회 현상을 바라보는 관점으로 가장 적절한 것은?", ["시간적 관점","공간적 관점","사회적 관점","윤리적 관점"], 1, "과거의 사실과 역사적 배경을 통해 현상을 파악하는 것은 시간적 관점입니다."],
+["", "덥고 습한 열대 기후 지역에서 지면의 열기와 습기를 피하기 위해 바닥을 지면에서 띄워 지은 가옥은?", ["이글루","고상 가옥","흙벽돌집","게르"], 2, "고상 가옥은 열대 기후 지역에서 통풍과 습기·해충 차단을 위해 바닥을 높여 지은 집입니다."],
+["", "건조 기후 지역의 전통 의복의 특징으로 가장 적절한 것은?", ["털가죽으로 만든 두꺼운 옷","통풍이 잘되는 짧고 얇은 옷","온몸을 감싸는 헐렁한 옷","방수가 잘 되는 비옷"], 3, "강한 햇볕과 모래바람을 막기 위해 온몸을 감싸는 헐렁한 옷을 입습니다."],
+["", "급격한 도시화 과정에서 나타나는 문제로 가장 적절한 것은?", ["농촌 인구의 증가","도시 기반 시설의 과잉","도시 인구의 감소","주택 부족과 교통 혼잡"], 4, "인구가 도시로 몰리면서 주택 부족, 교통 혼잡, 환경 오염 등의 문제가 나타납니다."],
+["", "다음 중 사회권에 해당하는 것은?", ["선거권","교육을 받을 권리","재판 청구권","신체의 자유"], 2, "사회권은 인간다운 생활을 위해 국가에 요구할 수 있는 권리로, 교육을 받을 권리·근로의 권리 등이 있습니다."],
+["국민의 모든 자유와 권리는 국가 안전 보장·질서 유지 또는 공공복리를 위하여 필요한 경우에 한하여 (   )로써 제한할 수 있으며, 제한하는 경우에도 자유와 권리의 본질적인 내용을 침해할 수 없다.\n- 「헌법」 제37조 제2항 -", "다음 빈칸에 들어갈 말로 옳은 것은?", ["명령","조례","법률","규칙"], 3, "기본권은 국회가 제정한 법률로써만 제한할 수 있습니다."],
+["", "수요 법칙에 대한 설명으로 옳은 것은?", ["가격이 오르면 수요량이 증가한다.","가격이 오르면 수요량이 감소한다.","가격이 내리면 공급량이 증가한다.","가격과 수요량은 관계가 없다."], 2, "다른 조건이 같을 때 가격이 오르면 수요량은 감소합니다(가격과 수요량은 반비례)."],
+["", "기회비용의 의미로 옳은 것은?", ["어떤 선택으로 포기한 대안 중 가장 가치가 큰 것","이미 지출하여 회수할 수 없는 비용","물건을 살 때 실제로 지불한 금액","생산에 필요한 원료의 가격"], 1, "기회비용은 선택으로 인해 포기한 대안 중 가장 큰 가치입니다. ②는 매몰 비용입니다."],
+["", "금융 자산 중 ‘예금’의 특징으로 가장 적절한 것은?", ["수익성이 매우 높고 원금 손실 위험이 크다.","안전성이 높으나 수익성은 상대적으로 낮다.","회사의 소유권을 나타내는 증서이다.","정부가 발행하는 채무 증서이다."], 2, "예금은 안전성이 높은 대신 수익성이 낮습니다. ③은 주식, ④는 국채에 대한 설명입니다."],
+["사회적·경제적 불평등은 최소 수혜자에게 최대의 이익이 되도록 조정되어야 하며, 공정한 기회 균등의 조건에서 모든 사람에게 개방된 직위와 결부되어야 한다.", "다음 주장을 한 사상가는?", ["노직","벤담","롤스","마르크스"], 3, "롤스는 ‘공정으로서의 정의’를 주장하며 차등의 원칙(최소 수혜자 최대 이익)을 제시했습니다."],
+["", "문화 상대주의에 대한 설명으로 가장 적절한 것은?", ["자기 문화만 우월하다고 보는 태도","다른 문화를 무조건 동경하는 태도","인권을 침해하는 문화까지 모두 인정하는 태도","각 사회의 문화를 그 사회의 환경과 맥락에서 이해하려는 태도"], 4, "문화 상대주의는 문화를 그 사회의 맥락에서 이해하는 태도입니다. ③은 극단적 문화 상대주의로 경계해야 합니다."],
+["", "자문화 중심주의의 사례로 가장 적절한 것은?", ["다른 나라의 음식을 존중하며 맛본다.","우리 문화만 우수하고 다른 문화는 미개하다고 여긴다.","외국 문화를 그 사회의 맥락에서 이해한다.","다양한 문화의 공존을 인정한다."], 2, "자기 문화만 우월하다고 여기고 다른 문화를 낮추어 보는 것이 자문화 중심주의입니다."],
+["", "세계화로 인해 나타날 수 있는 문제점으로 가장 적절한 것은?", ["문화의 획일화 가능성","국가 간 교류 감소","지역 경제의 완전한 고립","정보 교류의 단절"], 1, "세계화로 강대국 문화가 확산되면 지역 고유문화가 사라지는 문화 획일화가 나타날 수 있습니다."],
+["", "다음 중 정부 간 국제기구에 해당하는 것은?", ["그린피스","국경 없는 의사회","국제 연합(UN)","국제 앰네스티"], 3, "국제 연합은 각국 정부를 회원으로 하는 정부 간 국제기구이고, 나머지는 국제 비정부 기구(NGO)입니다."],
+["", "갈퉁이 말한 ‘적극적 평화’에 대한 설명으로 옳은 것은?", ["전쟁이나 테러 같은 직접적 폭력이 없는 상태만을 의미한다.","빈곤, 차별 등 구조적·문화적 폭력까지 제거된 상태이다.","군사력 강화만으로 달성된다.","국가 간 교류를 차단할 때 실현된다."], 2, "적극적 평화는 직접적 폭력뿐 아니라 구조적·문화적 폭력까지 사라진 상태입니다. ①은 소극적 평화입니다."],
+["", "저출산 문제를 해결하기 위한 대책으로 가장 적절한 것은?", ["정년 단축","출산 장려금 폐지","보육 시설 축소","육아 휴직 제도 확대"], 4, "육아 휴직 확대, 보육 시설 확충 등 일·가정 양립 지원이 저출산 대책입니다."],
+["", "지속 가능한 발전의 의미로 가장 적절한 것은?", ["미래 세대의 필요를 충족할 능력을 해치지 않으면서 현재 세대의 필요를 충족하는 발전","경제 성장만을 최우선으로 하는 발전","환경 보전을 위해 개발을 전면 중단하는 것","현재 세대의 이익만을 고려한 개발"], 1, "지속 가능한 발전은 환경 보전과 경제 발전, 세대 간 형평성을 함께 고려하는 발전입니다."],
+["“석유의 가채 연수는 약 50년이다.”", "다음과 관련된 자원의 특성으로 가장 적절한 것은?", ["가변성","편재성","유한성","재생성"], 3, "자원의 매장량이 한정되어 언젠가 고갈된다는 유한성과 관련됩니다."],
+["", "다음 중 신재생 에너지에 해당하는 것은?", ["석탄","태양광","석유","우라늄"], 2, "태양광은 재생 가능한 신재생 에너지입니다. 석탄·석유는 화석 연료, 우라늄은 원자력 연료입니다."],
+["", "공정 무역의 목적으로 가장 적절한 것은?", ["다국적 기업의 이윤을 극대화한다.","생산자에게 정당한 대가를 지불하여 개발 도상국 생산자의 삶의 질을 높인다.","관세를 높여 수입을 제한한다.","소비자에게 가장 낮은 가격을 보장한다."], 2, "공정 무역은 개발 도상국 생산자에게 정당한 대가를 지불하는 윤리적 무역입니다."],
+["", "시민 불복종이 정당화되기 위한 조건으로 가장 적절한 것은?", ["폭력적 수단의 사용","개인의 이익 추구","처벌의 감수와 비폭력성","정부의 전복"], 3, "시민 불복종은 공익성, 비폭력성, 처벌 감수, 최후의 수단 등의 조건을 갖추어야 합니다."],
+["", "다음 중 사회 보험에 해당하는 것은?", ["기초 생활 보장 제도","노인 돌봄 서비스","의료 급여","국민연금"], 4, "국민연금은 사회 보험입니다. 기초 생활 보장·의료 급여는 공공 부조, 노인 돌봄은 사회 서비스입니다."],
+["", "교통·통신의 발달로 이동 시간과 비용이 줄어들어 지역 간 거리가 가깝게 느껴지는 현상은?", ["시공간 압축","도시 공동화","님비 현상","역도시화"], 1, "교통·통신 발달로 시간적·공간적 거리가 줄어드는 것을 시공간 압축이라고 합니다."],
+["", "정보화로 인해 나타나는 문제점으로 가장 적절한 것은?", ["정보 접근성의 향상","원격 진료의 확대","사생활 침해와 개인 정보 유출","전자 상거래의 발달"], 3, "정보화의 부작용으로 사생활 침해, 개인 정보 유출, 사이버 범죄 등이 있습니다."],
+["", "지진이 발생했을 때의 행동 요령으로 가장 적절한 것은?", ["엘리베이터를 이용해 신속히 대피한다.","탁자 아래로 들어가 몸을 보호한다.","창문 옆에 서 있는다.","건물 안에서 불을 켜고 기다린다."], 2, "흔들릴 때는 탁자 아래로 들어가 몸을 보호하고, 흔들림이 멈추면 계단으로 대피합니다."]
+],
+'과학': [
+["", "빅뱅 이후 우주 초기에 만들어진 원소 중 질량비로 가장 많은 것은?", ["헬륨","수소","탄소","산소"], 2, "우주 초기에는 수소와 헬륨이 약 3:1의 질량비로 생성되어 수소가 가장 많습니다."],
+["", "주기율표에서 같은 족 원소들의 화학적 성질이 비슷한 까닭은 무엇이 같기 때문인가?", ["원자 번호","질량수","원자가 전자 수","전자 껍질 수"], 3, "같은 족 원소는 원자가 전자 수가 같아 화학적 성질이 비슷합니다. 전자 껍질 수가 같은 것은 같은 주기입니다."],
+["", "다음 중 이온 결합 물질은?", ["염화 나트륨(NaCl)","물(H₂O)","산소(O₂)","메테인(CH₄)"], 1, "금속 원소(Na)와 비금속 원소(Cl)가 이온 결합한 물질입니다. 나머지는 공유 결합 물질입니다."],
+["", "지각을 구성하는 원소 중 질량비로 가장 많은 것은?", ["규소","알루미늄","철","산소"], 4, "지각은 산소 > 규소 > 알루미늄 > 철 순으로 많습니다."],
+["", "질량이 2 kg인 물체에 10 N의 알짜힘이 작용할 때, 물체의 가속도의 크기는?", ["2 m/s²","5 m/s²","10 m/s²","20 m/s²"], 2, "F = ma에서 a = F/m = 10 ÷ 2 = 5 m/s²"],
+["", "공기 저항을 무시할 때, 자유 낙하 하는 물체의 운동에 대한 설명으로 옳은 것은?", ["속력이 일정하다.","속력이 일정하게 감소한다.","속력이 일정하게 증가한다.","가속도가 점점 커진다."], 3, "자유 낙하 운동은 중력 가속도(약 9.8 m/s²)가 일정하여 속력이 일정하게 증가합니다."],
+["", "질량 2 kg인 물체가 3 m/s의 속도로 운동할 때, 이 물체의 운동량의 크기(kg·m/s)는?", ["6","5","1.5","9"], 1, "운동량 = 질량 × 속도 = 2 × 3 = 6 kg·m/s"],
+["", "세포막을 구성하는 주성분으로 옳은 것은?", ["녹말과 지방","셀룰로스","핵산","인지질과 단백질"], 4, "세포막은 인지질 2중층에 단백질이 박혀 있는 구조입니다."],
+["", "식물 세포에서 광합성이 일어나는 세포 소기관은?", ["미토콘드리아","엽록체","리보솜","핵"], 2, "엽록체에서 빛에너지를 이용해 포도당을 합성합니다. 미토콘드리아는 세포 호흡 장소입니다."],
+["", "생명체 내 효소(생체 촉매)의 특징으로 옳은 것은?", ["반응의 활성화 에너지를 낮춘다.","반응 후 모두 소모되어 없어진다.","모든 반응에 공통으로 작용한다.","온도와 관계없이 작용한다."], 1, "효소는 활성화 에너지를 낮춰 반응 속도를 높이며, 반응 후에도 변하지 않고 기질 특이성이 있습니다."],
+["", "DNA에서 서로 상보적으로 결합하는 염기쌍으로 옳은 것은?", ["A - G","A - C","G - T","G - C"], 4, "DNA에서 아데닌(A)은 타이민(T)과, 구아닌(G)은 사이토신(C)과 결합합니다."],
+["", "산화 반응에 대한 설명으로 옳은 것은?", ["산소를 잃는 반응","전자를 얻는 반응","산소를 얻거나 전자를 잃는 반응","수소를 얻는 반응"], 3, "산화는 산소를 얻거나 전자를 잃는 반응입니다. ①②④는 환원에 해당합니다."],
+["", "산과 염기가 반응할 때 H⁺과 OH⁻이 1:1로 결합하여 생성되는 물질은?", ["수소 기체","물","산소 기체","이산화 탄소"], 2, "중화 반응: H⁺ + OH⁻ → H₂O"],
+["", "생태계 구성 요소 중 생산자에 해당하는 것은?", ["버섯","토끼","벼","곰팡이"], 3, "벼는 광합성으로 스스로 양분을 만드는 생산자입니다. 토끼는 소비자, 버섯·곰팡이는 분해자입니다."],
+["", "지구 온난화의 주요 원인이 되는 온실 기체는?", ["이산화 탄소","질소","산소","아르곤"], 1, "화석 연료 사용으로 증가한 이산화 탄소가 대표적인 온실 기체입니다."],
+["", "판의 경계 중 발산형 경계에서 형성되는 지형은?", ["해구","해령","습곡 산맥","호상 열도"], 2, "발산형 경계에서는 해령, 열곡대가 형성됩니다. 해구·호상 열도·습곡 산맥은 수렴형 경계입니다."],
+["", "엘니뇨 시기에 나타나는 현상으로 옳은 것은?", ["무역풍이 평상시보다 강해진다.","동태평양의 용승이 강해진다.","서태평양의 강수량이 크게 늘어난다.","동태평양 적도 부근 해수면 온도가 평상시보다 높아진다."], 4, "엘니뇨 시기에는 무역풍이 약해져 동태평양 용승이 약해지고 해수면 온도가 높아집니다."],
+["", "발전기에서 전기 에너지가 만들어지는 원리는?", ["전자기 유도","정전기 유도","빛의 굴절","열의 대류"], 1, "코일 속 자기장의 변화로 유도 전류가 흐르는 전자기 유도 현상을 이용합니다."],
+["", "다음 중 화석 연료가 아닌 것은?", ["석탄","태양광","석유","천연가스"], 2, "석탄, 석유, 천연가스는 화석 연료이고, 태양광은 신재생 에너지입니다."],
+["", "생물 다양성의 세 가지 의미에 포함되지 않는 것은?", ["유전적 다양성","종 다양성","기후 다양성","생태계 다양성"], 3, "생물 다양성은 유전적 다양성, 종 다양성, 생태계 다양성을 포함합니다."],
+["", "태양과 질량이 비슷한 별이 진화의 마지막 단계에서 되는 천체는?", ["블랙홀","중성자별","백색 왜성","초신성"], 3, "태양 정도의 질량을 가진 별은 적색 거성 → 행성상 성운을 거쳐 중심부가 백색 왜성이 됩니다."],
+["탄소 원자가 육각형 벌집 모양으로 배열된 한 층의 얇은 막으로, 강도가 높고 전기 전도성이 우수하여 휘어지는 디스플레이 등에 활용된다.", "다음 설명에 해당하는 신소재는?", ["그래핀","네오디뮴 자석","초전도체","액정"], 1, "그래핀은 탄소 원자가 벌집 구조로 배열된 2차원 신소재입니다."],
+["", "염기의 공통적인 성질로 옳은 것은?", ["푸른색 리트머스 종이를 붉게 변화시킨다.","수용액에서 OH⁻을 내놓는다.","금속과 반응하여 수소 기체를 발생시킨다.","pH가 7보다 작다."], 2, "염기는 수용액에서 수산화 이온(OH⁻)을 내놓습니다. ①③④는 산의 성질입니다."],
+["", "지구 시스템의 구성 요소 중 지구에 살고 있는 모든 생물을 포함하는 영역은?", ["기권","수권","지권","생물권"], 4, "생물권은 지구에 사는 모든 생물로, 기권·수권·지권에 걸쳐 분포합니다."],
+["", "태양 전지에서 일어나는 에너지 전환으로 옳은 것은?", ["전기 에너지 → 빛 에너지","화학 에너지 → 열 에너지","빛 에너지 → 전기 에너지","운동 에너지 → 위치 에너지"], 3, "태양 전지는 빛에너지를 전기 에너지로 전환합니다."]
+],
+'한국사': [
+["", "구석기 시대의 생활 모습으로 옳은 것은?", ["뗀석기를 사용하고 이동 생활을 하였다.","농경과 목축을 시작하였다.","청동 무기를 사용하였다.","철제 농기구를 사용하였다."], 1, "구석기 시대에는 뗀석기를 사용하며 사냥·채집을 하고 동굴이나 막집에서 이동 생활을 했습니다."],
+["", "신석기 시대를 대표하는 유물은?", ["비파형 동검","빗살무늬 토기","주먹도끼","민무늬 토기"], 2, "빗살무늬 토기는 신석기 시대 대표 유물입니다. 비파형 동검·민무늬 토기는 청동기, 주먹도끼는 구석기 유물입니다."],
+["", "고조선 사회의 모습을 알 수 있는 법으로, ‘사람을 죽인 자는 즉시 죽인다’ 등의 내용이 담긴 것은?", ["화랑도","골품제","8조법","진대법"], 3, "고조선의 8조법은 생명 존중, 사유 재산 보호, 계급 사회의 모습을 보여 줍니다."],
+["평양으로 도읍을 옮기고 남진 정책을 추진하여 백제의 수도 한성을 함락하고 한강 유역을 차지하였다.", "다음 업적을 남긴 고구려의 왕은?", ["광개토 대왕","소수림왕","미천왕","장수왕"], 4, "장수왕은 427년 평양 천도 후 남진 정책을 펼쳐 한강 유역을 차지했습니다."],
+["4세기 백제의 전성기를 이끈 왕으로, 마한을 정복하고 고구려 평양성을 공격하여 고국원왕을 전사시켰다.", "다음 설명에 해당하는 백제의 왕은?", ["근초고왕","무령왕","성왕","의자왕"], 1, "근초고왕은 4세기 백제의 전성기를 이끌었습니다."],
+["화랑도를 국가적 조직으로 개편하고 한강 유역을 차지하였으며, 단양 적성비와 순수비를 세웠다.", "다음 업적을 남긴 신라의 왕은?", ["법흥왕","진흥왕","지증왕","선덕 여왕"], 2, "진흥왕은 한강 유역을 차지하고 영토 확장을 기념하여 순수비를 세웠습니다."],
+["", "통일 신라 신문왕의 업적으로 옳은 것은?", ["훈민정음을 창제하였다.","노비안검법을 실시하였다.","관료전을 지급하고 녹읍을 폐지하였다.","과거제를 처음 실시하였다."], 3, "신문왕은 관료전 지급, 녹읍 폐지, 국학 설립 등으로 왕권을 강화했습니다."],
+["", "발해에 대한 설명으로 옳은 것은?", ["고구려 유민 대조영이 건국하였다.","김수로가 건국하였다.","삼국을 통일하였다.","후삼국을 통일하였다."], 1, "발해는 698년 고구려 유민 대조영이 건국하였고, 전성기에 ‘해동성국’이라 불렸습니다."],
+["", "고려 태조 왕건의 정책으로 옳은 것은?", ["노비안검법을 실시하였다.","훈요 10조를 남기고 북진 정책을 추진하였다.","쌍성총관부를 공격하였다.","전시과를 처음 실시하였다."], 2, "태조는 훈요 10조를 남기고 고구려 계승 의식에 따라 북진 정책을 추진했습니다."],
+["", "고려 광종의 업적으로 옳은 것은?", ["12목에 지방관을 파견하였다.","정동행성 이문소를 폐지하였다.","별무반을 조직하였다.","노비안검법과 과거제를 실시하였다."], 4, "광종은 노비안검법과 과거제로 왕권을 강화했습니다. ①은 성종, ②는 공민왕, ③은 숙종 때입니다."],
+["", "몽골의 침입에 맞선 고려의 항쟁으로 옳은 것은?", ["강감찬이 귀주 대첩에서 승리하였다.","윤관이 동북 9성을 쌓았다.","삼별초가 진도와 제주도로 옮기며 항쟁하였다.","서희가 외교 담판으로 강동 6주를 획득하였다."], 3, "삼별초는 몽골과의 강화에 반대하여 진도·제주도에서 항쟁했습니다. ①④는 거란, ②는 여진 관련 사실입니다."],
+["집현전을 확대하고 훈민정음을 창제하였으며, 측우기와 자격루 등을 제작하였다.", "다음 업적을 남긴 조선의 왕은?", ["세종","태종","세조","성종"], 1, "세종은 훈민정음 창제와 과학 기구 제작 등 민족 문화를 발전시켰습니다."],
+["임진왜란 때 이순신이 학익진 전법으로 일본 수군을 크게 무찌른 전투", "다음 설명에 해당하는 전투는?", ["살수 대첩","귀주 대첩","한산도 대첩","행주 대첩"], 3, "한산도 대첩(1592)은 이순신의 학익진 전법으로 승리한 해전입니다. 행주 대첩은 권율의 승리입니다."],
+["규장각을 설치하고 장용영을 창설하였으며, 수원 화성을 건설하였다.", "다음 업적을 남긴 조선의 왕은?", ["영조","정조","숙종","순조"], 2, "정조는 규장각, 장용영 설치와 수원 화성 건설로 개혁 정치를 펼쳤습니다."],
+["서원을 정리하고 경복궁을 중건하였으며, 통상 수교 거부 정책을 펼쳤다.", "다음 정책을 추진한 인물은?", ["김옥균","전봉준","최익현","흥선 대원군"], 4, "흥선 대원군은 왕권 강화를 위해 서원 정리, 경복궁 중건을 추진하고 척화비를 세웠습니다."],
+["1876년 조선이 일본과 맺은 최초의 근대적 조약으로, 부산 외 2개 항구의 개항과 치외 법권 인정 등 불평등한 내용을 담았다.", "다음 설명에 해당하는 조약은?", ["한성 조약","강화도 조약","톈진 조약","시모노세키 조약"], 2, "강화도 조약(조일 수호 조규)은 최초의 근대적 조약이자 불평등 조약입니다."],
+["1884년 김옥균, 박영효 등 급진 개화파가 우정총국 개국 축하연을 이용하여 일으킨 정변", "다음 설명에 해당하는 사건은?", ["임오군란","을미사변","갑신정변","아관 파천"], 3, "갑신정변은 급진 개화파가 일으켰으나 청군의 개입으로 3일 만에 실패했습니다."],
+["전봉준을 중심으로 ‘보국안민’, ‘제폭구민’을 내걸고 봉기하였으며, 전주 화약 이후 집강소를 설치하였다.", "다음 설명에 해당하는 사건은?", ["동학 농민 운동","갑오개혁","105인 사건","국채 보상 운동"], 1, "1894년 동학 농민 운동은 반봉건·반외세를 내세운 농민 운동입니다."],
+["서재필이 중심이 되어 독립문을 세우고 만민 공동회를 개최하였다.", "다음 활동을 한 단체는?", ["신민회","독립 협회","보안회","신간회"], 2, "독립 협회는 독립문 건립, 만민 공동회 개최 등으로 자주 국권 운동을 펼쳤습니다."],
+["", "1905년 대한 제국의 외교권을 박탈하고 통감부를 설치한 조약은?", ["한일 의정서","정미 7조약","한국 병합 조약","을사늑약"], 4, "을사늑약으로 외교권이 박탈되고 통감부가 설치되었습니다."],
+["1919년 민족 대표 33인이 독립 선언서를 발표하며 시작되었고, 이 운동을 계기로 대한민국 임시 정부가 수립되었다.", "다음 설명에 해당하는 민족 운동은?", ["3·1 운동","6·10 만세 운동","광주 학생 항일 운동","물산 장려 운동"], 1, "3·1 운동은 최대 규모의 민족 운동으로, 대한민국 임시 정부 수립의 계기가 되었습니다."],
+["", "1920년 홍범도, 김좌진 등이 이끈 독립군이 일본군에 승리한 전투를 옳게 짝지은 것은?", ["한산도 대첩, 명량 해전","봉오동 전투, 청산리 전투","살수 대첩, 안시성 전투","쌍성보 전투, 대전자령 전투"], 2, "1920년 홍범도의 봉오동 전투, 김좌진·홍범도 등의 청산리 전투가 대표적인 독립군의 승리입니다."],
+["", "1930년대 후반 이후 일제가 실시한 민족 말살 통치 정책으로 옳은 것은?", ["토지 조사 사업","회사령 실시","창씨개명과 신사 참배 강요","산미 증식 계획"], 3, "민족 말살 통치기에는 창씨개명, 신사 참배, 황국 신민 서사 암송 등을 강요했습니다."],
+["6·25 전쟁 중 1950년 9월, 국제 연합군이 전세를 역전시키고 서울을 되찾는 계기가 된 작전", "다음 설명에 해당하는 것은?", ["인천 상륙 작전","흥남 철수","중국군 개입","정전 협정 체결"], 1, "인천 상륙 작전(1950.9.15.)으로 전세를 역전시켜 서울을 수복했습니다."],
+["1960년 3·15 부정 선거에 항의하여 일어났으며, 그 결과 이승만 정부가 무너졌다.", "다음 설명에 해당하는 민주화 운동은?", ["5·18 민주화 운동","6월 민주 항쟁","4·19 혁명","부마 민주 항쟁"], 3, "4·19 혁명은 3·15 부정 선거에 항의하여 일어나 이승만의 하야를 이끌어 냈습니다."]
+],
+'도덕': [
+["생명, 환경, 정보 등 현대 사회의 구체적인 윤리 문제를 해결하는 데 중점을 두는 윤리학", "다음 설명에 해당하는 윤리학은?", ["메타 윤리학","기술 윤리학","실천 윤리학","진화 윤리학"], 3, "실천 윤리학은 이론 윤리학을 바탕으로 구체적인 윤리 문제의 해결을 목표로 합니다."],
+["‘최대 다수의 최대 행복’을 도덕 판단의 기준으로 삼고, 쾌락을 양적으로 계산할 수 있다고 보았다.", "다음 주장을 한 사상가는?", ["칸트","벤담","아리스토텔레스","롤스"], 2, "벤담은 양적 공리주의자로, 쾌락의 양을 계산해 최대 행복을 추구해야 한다고 보았습니다."],
+["", "칸트의 의무론적 윤리의 입장으로 가장 적절한 것은?", ["인간을 언제나 목적으로 대우해야 한다.","결과가 좋으면 행위도 옳다.","쾌락의 양을 계산하여 판단해야 한다.","도덕은 사회적 합의에 불과하다."], 1, "칸트는 인간을 수단이 아닌 목적으로 대우하라는 정언 명령을 제시했습니다."],
+["덕 윤리의 관점에서, 지나침과 모자람이 없는 적절한 상태를 이루는 것을 강조하였다.", "아리스토텔레스가 강조한 다음 개념은?", ["무위","자비","정명","중용"], 4, "아리스토텔레스는 지나침과 모자람 사이의 적절한 상태인 중용을 덕으로 보았습니다."],
+["", "공자가 강조한 핵심 덕목으로, 사람을 사랑하는 마음을 뜻하는 것은?", ["인(仁)","무위(無爲)","자비(慈悲)","겸애(兼愛)"], 1, "공자는 인(仁)을 최고의 덕목으로 강조했습니다. 무위는 도가, 자비는 불교, 겸애는 묵자의 사상입니다."],
+["", "모든 존재는 서로 의존하여 생겨나고 사라진다는 불교의 사상은?", ["성선설","연기설","무위자연","정명론"], 2, "연기설은 모든 것이 원인과 조건에 의해 서로 의존하여 존재한다는 불교 사상입니다."],
+["인위적인 것을 버리고 자연의 순리에 따라 사는 ‘무위자연’의 삶을 강조하였다.", "다음 주장을 한 사상가는?", ["공자","맹자","노자","석가모니"], 3, "노자는 도가 사상가로 무위자연을 강조했습니다."],
+["동물도 고통을 느낄 수 있으므로 동물의 이익도 인간의 이익과 동등하게 고려해야 한다.", "다음 주장을 한 사상가는?", ["데카르트","칸트","싱어","아퀴나스"], 3, "싱어는 공리주의 입장에서 동물의 이익 평등 고려를 주장했습니다(『동물 해방』)."],
+["", "사형 제도에 반대하며 종신 노역형이 범죄 예방에 더 효과적이라고 주장한 사상가는?", ["베카리아","칸트","루소","로크"], 1, "베카리아는 사형보다 종신 노역형이 더 큰 범죄 예방 효과가 있다고 주장했습니다."],
+["", "정보 사회에서 바람직한 태도로 가장 적절한 것은?", ["타인의 저작물을 출처 없이 게시한다.","악성 댓글을 작성한다.","타인의 개인 정보를 무단으로 유포한다.","저작권을 존중하고 출처를 밝힌다."], 4, "정보 윤리의 기본은 저작권 존중, 사생활 보호, 책임 있는 정보 이용입니다."],
+["", "공자가 각자 자신의 지위와 역할에 맞는 책임을 다해야 한다고 주장하며 강조한 것은?", ["무위(無爲)","정명(正名)","해탈(解脫)","겸애(兼愛)"], 2, "정명은 ‘임금은 임금답게, 신하는 신하답게’처럼 각자의 명분에 맞는 역할을 다하는 것입니다."],
+["레오폴드는 대지 윤리를 주장하며 인간을 대지 공동체의 지배자가 아닌 평범한 구성원으로 보았다.", "다음 입장에 해당하는 자연관은?", ["인간 중심주의","동물 중심주의","생명 중심주의","생태 중심주의"], 4, "레오폴드의 대지 윤리는 생태계 전체를 도덕적 고려 대상으로 보는 생태 중심주의입니다."],
+["", "모든 생명은 신성하므로 존중해야 한다는 슈바이처의 사상은?", ["생명 외경","대지 윤리","동물 해방","책임 윤리"], 1, "슈바이처는 모든 생명을 경외하는 ‘생명 외경’ 사상을 주장했습니다(생명 중심주의)."],
+["과학 기술의 영향력이 커진 현대 사회에서 미래 세대와 자연까지 고려하는 책임 윤리를 주장하였다.", "다음 주장을 한 사상가는?", ["베이컨","홉스","요나스","흄"], 3, "요나스는 미래 세대와 자연에 대한 책임을 강조하는 책임 윤리를 주장했습니다."],
+["", "다양한 문화가 각자의 정체성을 유지하면서 조화를 이루는 다문화 정책 모형은?", ["용광로 이론","샐러드 볼 이론","동화주의","차별 배제 모형"], 2, "샐러드 볼 이론은 여러 문화가 고유성을 유지하며 공존하는 다문화주의 모형입니다."],
+["", "종교 간 갈등을 해결하기 위한 태도로 가장 적절한 것은?", ["배척","무관심","강요","관용"], 4, "서로 다른 종교를 인정하고 존중하는 관용의 태도가 필요합니다."],
+["남북 분단으로 인해 발생하는 군사비, 이산가족의 고통 등 소모적 비용", "다음 설명에 해당하는 개념은?", ["분단 비용","통일 비용","통일 편익","평화 비용"], 1, "분단 비용은 분단 상태를 유지하기 위해 지출되는 소모적 비용입니다."],
+["해외 원조는 고통받는 사람의 수를 줄여 전체 행복을 증진하는 것이므로 의무이다. 이때 국적이나 거리는 고려 대상이 아니다.", "다음 주장을 한 사상가는?", ["노직","싱어","롤스","칸트"], 2, "싱어는 공리주의 입장에서 해외 원조를 인류 전체의 고통을 줄이는 의무로 보았습니다."],
+["", "영구 평화를 위해 국제 연맹의 창설을 주장한 사상가는?", ["갈퉁","홉스","칸트","마키아벨리"], 3, "칸트는 『영구 평화론』에서 국가 간 연맹을 통한 영구 평화를 주장했습니다."],
+["", "프롬이 제시한 성숙한 사랑의 요소로 옳은 것은?", ["보호, 책임, 존경, 이해","소유, 지배, 통제, 복종","열정, 경쟁, 성취, 보상","쾌락, 욕망, 이익, 계산"], 1, "프롬은 사랑의 요소로 보호(관심), 책임, 존경, 이해(지식)를 제시했습니다."],
+["합리적 의사소통을 위해서는 이상적 담화 상황에서 이해 가능성, 진리성, 정당성, 진실성의 조건을 갖추어야 한다.", "다음 주장을 한 사상가는?", ["니체","하버마스","밀","데카르트"], 2, "하버마스는 담론 윤리를 통해 합리적 의사소통의 조건을 제시했습니다."],
+["", "『시민 불복종』을 저술하고 부당한 법에 대한 개인의 양심에 따른 불복종을 주장한 사상가는?", ["소로","홉스","플라톤","마키아벨리"], 1, "소로는 개인의 양심에 근거하여 부당한 법과 정책에 불복종할 수 있다고 주장했습니다."],
+["", "원초적 입장과 무지의 베일을 통해 정의의 원칙을 도출한 사상가는?", ["노직","마르크스","왈처","롤스"], 4, "롤스는 무지의 베일 속 원초적 입장에서 합의된 정의의 원칙을 제시했습니다."],
+["", "부모를 공경하고 정성껏 섬기는 자녀의 도리를 뜻하는 것은?", ["충(忠)","효(孝)","신(信)","예(禮)"], 2, "효(孝)는 부모를 공경하고 섬기는 자녀의 도리입니다."],
+["정당한 절차에 따라 취득하고 이전된 소유물에 대해서는 개인이 절대적인 권리를 가지며, 국가는 최소한의 역할만 해야 한다.", "다음 주장을 한 사상가는?", ["롤스","마르크스","노직","싱어"], 3, "노직은 소유 권리론과 최소 국가론을 주장한 자유 지상주의자입니다."]
+]
+};
+
+const BUILTIN = SUBJECTS.map(s => ({
+  examYear: 2025, examRound: 1, subject: s.name, source: 'builtin', sample: true,
+  questions: RAW[s.name].map((r, i) => ({id: i + 1, passage: r[0], question: r[1], options: r[2], answer: r[3], explanation: r[4]}))
+}));
+
+/* 공식 기출 정답표 (검정고시지원센터 정답 PDF에서 추출, 복수 정답은 배열)
+   원본 시험지: pdf/{연도}-{차수}/{과목}.pdf — tools/download_gumsi.mjs 로 내려받고,
+   tools/extract_answers.py → tools/embed_answers.mjs 로 이 블록을 갱신한다. */
+const OFFICIAL_KEYS = /*OFFICIAL_KEYS*/{
+  "2018-1": {"국어":[2,3,3,1,3,1,2,3,1,4,1,4,3,3,4,2,4,1,3,2,4,1,2,2,1], "수학":[3,1,4,3,3,4,2,3,2,2,1,2,4,1,4,4,1,3,1,2], "영어":[4,4,1,4,2,3,1,4,1,3,1,2,2,3,2,4,1,4,3,2,3,3,3,2,1], "사회":[3,4,2,1,4,3,2,1,1,3,2,4,2,3,4,3,1,3,1,4,1,2,4,4,2], "과학":[3,2,4,1,4,2,1,3,4,1,2,4,3,2,1,2,1,4,4,3,2,1,3,3,2], "한국사":[2,3,4,4,4,1,3,4,3,4,4,1,2,1,3,1,2,3,2,2,3,2,1,3,4], "도덕":[3,4,4,3,1,1,3,4,1,2,2,1,2,1,4,2,3,4,3,2,2,4,3,1,1]},
+  "2018-2": {"국어":[2,1,4,3,2,4,3,3,2,3,1,4,1,3,4,3,3,1,1,4,3,2,2,2,1], "수학":[2,4,3,3,4,2,1,2,1,3,4,3,1,2,4,1,4,1,3,2], "영어":[1,4,2,1,3,4,1,2,4,3,4,1,3,1,4,3,4,1,1,2,2,2,3,2,3], "사회":[2,4,4,1,3,1,3,4,4,3,4,2,1,2,2,1,3,3,4,3,1,2,2,1,4], "과학":[1,2,3,4,4,1,1,2,4,3,2,1,4,2,3,3,2,3,4,2,2,3,1,4,1], "한국사":[4,4,1,3,1,2,3,3,1,4,2,3,3,1,1,2,3,4,2,3,2,4,2,2,4], "도덕":[1,2,4,3,1,3,1,1,3,3,2,1,2,4,3,4,2,4,2,2,4,3,1,4,3]},
+  "2019-1": {"국어":[1,4,2,4,2,3,4,2,3,4,4,2,1,3,2,4,1,1,1,3,2,4,3,2,1], "수학":[3,1,4,4,2,3,2,2,3,2,1,4,1,1,4,3,3,4,2,2], "영어":[1,2,1,2,3,4,4,1,2,3,4,1,3,4,4,3,1,3,4,1,3,2,2,2,3], "사회":[1,4,3,4,2,3,2,4,1,3,2,1,1,2,4,2,4,1,3,1,4,2,2,3,3], "과학":[4,4,2,1,4,3,1,3,3,1,1,3,2,3,4,2,3,1,4,4,2,4,2,2,1], "한국사":[1,4,3,3,2,3,1,4,4,2,2,4,4,3,3,1,4,3,2,2,3,[2,3],1,1,4], "도덕":[1,4,3,3,4,3,2,1,2,2,1,4,1,3,1,4,2,3,4,3,2,3,3,2,1]},
+  "2019-2": {"국어":[4,4,3,2,4,4,1,3,3,1,3,4,1,1,3,1,2,2,2,3,4,4,4,2,1], "수학":[1,3,2,3,3,4,2,1,4,1,3,1,4,1,3,4,2,2,3,2], "영어":[3,2,2,1,2,1,4,3,2,2,1,3,1,1,2,4,4,4,3,4,2,4,3,3,4], "사회":[3,4,2,4,4,2,1,2,1,1,3,4,3,1,3,1,4,2,1,1,2,2,3,3,4], "과학":[3,1,1,4,1,2,1,3,2,3,4,3,1,2,4,2,1,4,2,3,4,2,4,3,2], "한국사":[4,4,1,4,2,1,1,3,1,3,2,3,2,1,2,3,2,1,1,4,4,3,3,4,4], "도덕":[4,3,3,1,2,1,4,3,2,4,2,3,3,4,1,2,4,1,1,2,4,2,1,3,1]},
+  "2020-1": {"국어":[3,4,3,3,1,3,3,1,1,1,4,4,2,2,4,2,3,3,2,2,1,2,4,1,2], "수학":[4,1,1,3,4,3,2,3,3,2,1,4,1,4,1,2,4,3,2,1], "영어":[2,4,3,4,3,1,1,1,2,2,2,3,1,2,4,4,3,2,1,4,1,4,3,3,4], "사회":[1,4,2,4,2,4,1,3,2,4,3,3,2,1,3,4,1,4,2,2,1,1,1,3,3], "과학":[2,4,4,1,4,1,1,2,2,1,2,3,3,4,3,3,2,4,3,2,1,4,1,3,1], "한국사":[3,4,1,2,2,3,1,2,3,1,3,3,1,1,1,3,2,2,4,2,4,3,4,1,4], "도덕":[2,1,2,3,3,4,3,4,1,4,1,1,3,4,2,1,3,4,3,1,4,4,2,2,2]},
+  "2020-2": {"국어":[1,3,1,2,2,2,3,2,4,4,1,2,3,3,4,4,3,1,1,2,1,3,3,1,3], "수학":[1,4,4,3,2,3,2,3,4,2,4,3,1,4,2,2,1,1,3,4], "영어":[4,4,2,1,2,3,3,2,1,2,2,3,4,1,1,4,3,4,2,1,1,2,4,1,3], "사회":[2,4,2,4,3,1,1,1,2,3,1,3,1,4,2,4,2,2,3,4,4,1,4,4,3], "과학":[1,3,3,2,3,2,1,4,4,3,3,1,2,2,2,4,4,3,1,4,1,4,1,4,2], "한국사":[3,2,4,4,1,4,3,3,1,2,2,1,1,2,1,2,3,4,3,4,1,3,3,2,4], "도덕":[2,2,1,4,4,3,4,3,4,4,1,3,2,1,2,4,3,2,1,1,3,2,3,4,1]},
+  "2021-1": {"국어":[4,1,3,3,2,4,4,4,1,1,2,1,3,2,2,3,2,1,4,4,3,2,2,3,3], "수학":[4,2,2,1,4,4,3,1,1,1,4,2,3,2,3,4,1,1,2,3], "영어":[2,1,3,1,2,4,4,3,2,4,1,4,1,1,2,3,3,4,1,4,4,2,3,1,3], "사회":[2,2,3,3,4,1,2,4,2,3,3,4,3,1,1,2,2,1,3,4,1,4,2,4,4], "과학":[1,1,3,4,2,2,1,4,1,1,4,2,3,3,4,1,2,2,3,2,4,3,4,3,2], "한국사":[1,4,3,2,4,1,2,3,1,2,3,2,3,2,4,1,3,4,1,1,1,2,3,4,4], "도덕":[1,2,3,3,1,1,2,1,1,2,4,3,1,2,1,2,4,4,4,2,3,4,3,3,4]},
+  "2021-2": {"국어":[1,4,4,3,2,3,1,2,2,4,1,3,1,4,1,2,3,2,1,2,4,3,1,3,4], "수학":[4,2,1,4,1,3,1,2,1,1,3,4,4,3,1,3,4,2,1,2], "영어":[4,2,1,2,4,1,3,1,4,3,1,3,3,2,2,1,1,4,3,2,4,4,3,2,4], "사회":[4,1,3,1,4,4,1,4,2,4,1,1,2,2,3,2,4,2,3,4,3,1,3,1,2], "과학":[1,2,4,3,2,2,3,3,1,4,4,2,2,4,1,1,3,4,2,4,1,2,3,3,1], "한국사":[3,4,4,1,2,1,1,2,1,3,2,2,1,2,1,4,2,4,1,3,4,3,3,4,3], "도덕":[2,3,3,1,4,3,1,1,3,4,3,4,4,2,1,2,4,2,2,4,1,1,2,3,3]},
+  "2022-1": {"국어":[4,3,3,3,4,1,2,2,3,2,3,4,1,3,1,1,2,2,4,4,1,2,1,4,2], "수학":[4,2,3,3,4,1,3,1,2,3,4,2,4,4,3,1,1,3,2,1], "영어":[1,2,2,3,1,3,1,4,4,1,1,3,4,3,2,1,4,3,4,3,2,4,4,2,3], "사회":[2,2,1,4,3,4,1,1,3,2,4,4,3,2,4,1,3,3,2,2,1,3,4,4,3], "과학":[4,3,1,3,2,4,3,2,1,3,1,4,3,4,1,2,2,4,4,1,3,1,4,2,2], "한국사":[3,1,4,4,1,2,3,4,4,3,2,3,2,3,1,2,4,1,3,2,4,1,2,4,1], "도덕":[2,4,2,1,2,2,1,3,2,1,3,1,4,1,4,3,3,3,1,4,2,3,4,3,4]},
+  "2022-2": {"국어":[4,3,4,1,2,1,3,4,2,1,3,2,4,2,1,3,4,3,3,1,4,1,3,2,4], "수학":[3,3,4,1,2,4,3,2,4,1,2,2,3,1,2,4,1,3,4,2], "영어":[2,3,1,3,1,2,4,2,4,2,2,1,3,3,2,1,4,3,4,1,3,3,4,1,4], "사회":[3,2,3,3,4,2,1,2,4,2,1,4,4,4,1,3,4,2,4,2,3,1,2,1,1], "과학":[2,3,1,3,3,4,2,2,4,1,1,2,4,3,4,2,3,4,3,3,2,1,3,1,2], "한국사":[1,4,3,1,4,4,3,1,1,4,3,2,3,2,1,2,3,2,1,4,3,3,1,2,4], "도덕":[3,2,3,2,1,1,4,1,3,3,4,2,3,2,1,4,4,2,4,3,1,3,1,2,2]},
+  "2023-1": {"국어":[3,1,4,3,2,4,4,3,4,2,4,2,1,4,1,3,1,2,1,2,2,3,1,3,4], "수학":[4,1,3,2,1,4,1,1,2,4,3,4,2,2,2,3,1,2,3,4], "영어":[3,3,1,1,4,3,2,3,2,3,1,2,1,4,1,2,2,4,4,4,1,2,4,4,3], "사회":[4,3,3,1,2,2,1,1,2,4,3,3,4,2,3,4,3,1,2,4,2,1,4,3,1], "과학":[4,2,4,1,4,2,3,2,4,2,1,4,3,4,2,3,4,1,2,3,1,1,3,3,1], "한국사":[3,1,4,2,2,3,2,2,4,1,1,4,1,3,4,3,4,3,2,4,1,2,1,4,4], "도덕":[1,2,4,2,4,1,2,3,4,3,4,1,4,1,3,2,3,3,1,3,2,3,2,4,1]},
+  "2023-2": {"국어":[2,2,3,4,1,1,4,4,1,3,1,3,2,4,2,1,1,2,2,1,2,3,4,3,4], "수학":[3,2,1,3,2,4,4,1,4,3,3,2,1,4,3,2,1,2,4,1], "영어":[4,3,3,4,2,4,1,3,3,2,1,1,4,4,3,1,4,3,3,2,1,2,2,2,4], "사회":[3,3,1,2,1,4,1,2,3,4,3,4,1,4,3,1,2,4,4,2,2,1,3,3,4], "과학":[2,3,4,2,2,4,2,4,4,3,1,1,3,3,1,2,2,4,4,1,1,3,3,1,4], "한국사":[3,1,2,3,4,4,2,3,1,1,4,4,3,1,2,1,4,4,3,2,4,4,3,2,1], "도덕":[3,1,3,4,1,4,4,2,3,2,2,1,3,1,3,4,3,2,1,2,4,1,4,2,4]},
+  "2024-1": {"국어":[1,1,4,3,4,2,3,2,2,1,1,3,2,4,4,2,1,3,1,1,4,4,2,3,3], "수학":[4,2,3,3,1,4,1,3,2,3,1,4,2,1,2,2,1,3,1,4], "영어":[2,1,2,4,3,1,1,3,3,1,4,1,2,3,4,3,2,4,4,2,4,3,2,4,3], "사회":[1,4,4,2,2,1,2,2,4,2,1,1,3,4,3,3,4,1,1,2,2,4,3,1,3], "과학":[1,3,4,3,3,4,1,4,1,4,3,2,2,3,2,2,1,1,4,4,1,2,4,3,1], "한국사":[2,1,1,3,2,1,3,4,1,4,4,3,2,3,1,3,1,4,3,4,4,2,3,2,4], "도덕":[1,4,2,4,4,3,1,3,3,1,4,1,2,4,3,1,2,2,3,2,3,3,1,4,1]},
+  "2024-2": {"국어":[3,3,4,3,2,1,1,4,1,2,2,4,2,1,2,2,4,4,3,2,1,4,3,4,3], "수학":[1,4,2,2,1,3,4,3,2,2,1,4,4,1,4,1,2,3,4,3], "영어":[2,4,3,3,2,2,1,1,2,4,3,1,4,4,3,4,3,3,2,1,2,1,2,1,1], "사회":[2,2,2,3,1,4,3,3,1,1,4,1,2,2,3,2,2,4,1,3,3,4,3,2,4], "과학":[4,1,3,4,3,4,3,2,4,2,1,2,4,4,3,3,1,2,1,3,2,1,2,1,4], "한국사":[2,4,2,3,2,1,1,2,4,4,4,3,1,4,2,1,3,1,3,1,3,4,3,3,4], "도덕":[1,3,2,3,1,1,3,3,2,1,1,1,4,2,3,2,4,4,4,1,4,2,4,2,4]},
+  "2025-1": {"국어":[3,2,2,3,2,3,3,2,2,4,1,2,4,1,1,3,3,4,4,1,4,1,4,4,1], "수학":[3,1,1,3,2,1,4,4,4,1,2,4,3,4,2,3,1,1,2,2], "영어":[1,3,3,4,3,2,2,3,4,1,1,2,3,2,4,1,4,4,1,2,4,4,1,4,3], "사회":[3,2,2,4,2,1,2,1,2,4,3,4,2,4,4,4,3,3,2,1,4,1,2,3,4], "과학":[2,3,3,3,1,3,1,1,4,4,2,2,3,1,4,3,4,2,1,4,2,2,3,2,4], "한국사":[1,4,1,2,4,2,1,1,3,2,2,3,2,4,3,4,2,4,1,4,2,3,4,3,4], "도덕":[4,4,4,1,2,3,3,4,4,3,1,2,2,3,1,1,4,2,2,4,1,1,3,2,1]},
+  "2025-2": {"국어":[1,2,3,3,2,1,1,2,2,2,1,2,4,3,4,1,4,4,3,1,3,3,2,4,4], "수학":[1,4,2,1,3,3,2,4,2,3,1,4,2,4,3,1,2,2,3,1], "영어":[2,1,2,3,4,1,2,2,1,1,4,3,4,1,2,3,4,4,3,3,4,3,1,4,1], "사회":[1,1,3,2,3,3,1,1,4,4,1,2,3,4,4,2,2,4,2,1,3,3,3,1,2], "과학":[3,4,3,1,1,1,3,4,2,4,1,3,2,3,4,2,4,4,2,3,1,2,3,3,4], "한국사":[3,3,2,1,2,2,1,2,1,4,3,3,4,3,1,2,2,4,1,3,3,2,4,4,2], "도덕":[1,2,3,3,2,3,1,4,1,3,4,4,1,1,3,3,2,4,2,4,1,2,2,3,4]},
+  "2026-1": {"국어":[2,3,4,1,2,1,4,3,2,4,3,2,4,4,1,4,1,2,3,2,3,1,4,3,4], "수학":[2,2,1,3,3,4,3,4,3,1,2,2,3,1,2,4,3,1,4,1], "영어":[1,4,3,1,3,2,3,4,2,2,4,1,3,1,2,4,4,4,3,3,2,2,1,1,2], "사회":[2,3,3,4,4,3,3,1,4,3,2,4,3,1,2,1,2,1,2,4,2,3,3,4,1], "과학":[1,2,1,2,3,4,2,4,4,1,3,1,2,4,2,1,4,1,4,3,2,3,3,3,4], "한국사":[3,3,2,1,4,1,2,1,1,2,3,1,4,1,4,2,4,1,4,2,4,3,2,4,4], "도덕":[3,1,3,4,4,4,4,1,3,1,3,1,2,2,3,1,2,3,1,2,4,2,2,4,1]},
+  "2026-2": {"국어":[3,3,3,1,4,4,1,4,4,1,4,3,3,3,3,2,1,2,1,4,2,1,4,1,4], "수학":[2,3,3,2,3,1,1,4,4,2,1,3,2,4,3,2,2,4,4,1], "영어":[1,3,2,1,3,1,4,1,1,2,1,2,1,2,2,4,4,4,1,4,1,4,4,3,3], "사회":[1,1,3,4,4,2,3,2,2,3,4,1,3,4,1,3,2,3,2,1,1,4,1,4,4], "과학":[1,3,4,2,2,4,4,2,3,1,1,4,1,3,4,1,4,2,3,3,1,3,2,1,2], "한국사":[4,3,3,1,1,2,3,1,4,2,2,3,4,4,3,3,4,4,1,4,1,3,4,2,1], "도덕":[3,2,3,1,2,3,4,4,1,3,2,4,2,4,2,1,1,4,2,3,2,1,3,4,1]}
+}/*END_OFFICIAL_KEYS*/;
+const officialPdf = (key, subject) => `pdf/${key}/${subject}.pdf`;
+function officialRounds(){
+  return Object.keys(OFFICIAL_KEYS).sort((a,b)=>{ const [ay,ar]=a.split('-').map(Number), [by,br]=b.split('-').map(Number); return by-ay||br-ar; });
+}
+/* 문항별 이미지·텍스트: { "2026-2": { "국어": [{no, img, size:[w,h], text, options, group:{id,instr,img,size}}] } } */
+const OFFICIAL_Q = window.GED_OFFICIAL_QUESTIONS || {};
+/* 해설: { "2026-2": { "국어": { "1": "..." } } } */
+const OFFICIAL_EXPL = window.GED_EXPLANATIONS || {};
+function officialQuestions(subject, key){
+  const ans=(OFFICIAL_KEYS[key]||{})[subject]; if(!ans) return [];
+  const [year, round]=key.split('-').map(Number), pdf=officialPdf(key, subject);
+  const items=new Map((((OFFICIAL_Q[key]||{})[subject])||[]).map(it=>[it.no,it]));
+  return ans.map((a,i)=>{
+    const it=items.get(i+1)||{}, g=it.group;
+    return {id:i+1, no:i+1, official:true, pdf, subject, year, round, sample:false, passage:'',
+      img:it.img||'', size:it.size, group:g?g.id:'', groupInstr:g?g.instr:'', groupImg:g?g.img:'', groupSize:g?g.size:null,
+      question:it.text || `${year}년 제${round}회 ${subject} ${i+1}번 (원본 시험지 참조)`, optText:it.options||[],
+      options:['1','2','3','4'], answer:a, explanation:((OFFICIAL_EXPL[key]||{})[subject]||{})[i+1]||'', uid:`o|${subject}|${year}|${round}|${i+1}`};
+  });
+}
+/* 오답노트에 예전에 저장된 문항도 나중에 추가된 해설을 보여 주도록 매번 조회 */
+const officialExpl = q => q.explanation || (((OFFICIAL_EXPL[`${q.year}-${q.round}`]||{})[q.subject]||{})[q.no]) || '';
+/* 랜덤 출제용: 이미지가 있는 모든 공식 기출 문항 */
+function officialPool(subject){
+  return officialRounds().filter(k=>(OFFICIAL_Q[k]||{})[subject]).flatMap(k=>officialQuestions(subject,k).filter(q=>q.img));
+}
+
+/* =====================================================================
+   3. 유틸 & 저장소
+   ===================================================================== */
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+function esc(s){ return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function rich(s){ return esc(s).replace(/__(.+?)__/g,'<u>$1</u>').replace(/\*\*(.+?)\*\*/g,'<b>$1</b>').replace(/\n/g,'<br>'); }
+function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function mmss(sec){ sec=Math.max(0,sec|0); return String(Math.floor(sec/60)).padStart(2,'0')+':'+String(sec%60).padStart(2,'0'); }
+function fmtDate(t){ const d=new Date(t); return `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; }
+function spaced(s){ return s.split('').join(' '); }
+function ptsOf(n){ const p=100/n; return Number.isInteger(p)? p : p.toFixed(1); }
+/* 정답은 숫자 또는 복수 정답 배열 */
+const isRight = (q, a) => Array.isArray(q.answer) ? q.answer.includes(a) : a === q.answer;
+const ansText = q => [].concat(q.answer).map(a => CIRC[a-1]).join(',');
+const store = {
+  get(k, d){ try{ const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; }catch(e){ return d; } },
+  set(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); return true; }catch(e){ return false; } }
+};
+function toast(msg){ const t=document.createElement('div'); t.className='toast'; t.textContent=msg; document.body.appendChild(t); setTimeout(()=>t.remove(),2200); }
+function modal(title, html, buttons){
+  const bg=document.createElement('div'); bg.className='modal-bg';
+  bg.innerHTML=`<div class="modal"><h3>${title}</h3><div>${html}</div><div class="acts"></div></div>`;
+  const acts=bg.querySelector('.acts');
+  buttons.forEach(b=>{ const el=document.createElement('button'); el.className='btn '+(b.cls||''); el.textContent=b.label; el.onclick=()=>{ bg.remove(); b.onClick && b.onClick(); }; acts.appendChild(el); });
+  document.body.appendChild(bg);
+}
+function download(name, text){
+  const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([text],{type:'application/json'})); a.download=name; a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+
+/* =====================================================================
+   4. 기출 DB
+   ===================================================================== */
+let userSets = store.get('ged_user_sets', []);
+function allSets(){ return BUILTIN.concat(userSets); }
+function decorate(q, s){
+  return {...q, subject:s.subject, year:s.examYear, round:s.examRound, sample:!!s.sample,
+          uid:`${s.source==='user'?'u':'b'}|${s.subject}|${s.examYear}|${s.examRound}|${q.id}`};
+}
+function poolOf(subject){
+  const out=[]; allSets().filter(s=>s.subject===subject).forEach(s=>s.questions.forEach(q=>out.push(decorate(q,s)))); return out;
+}
+function dbStats(){ const st={}; SUBJECTS.forEach(s=>st[s.name]=poolOf(s.name).length); return st; }
+function roundList(subjects){
+  const map=new Map();
+  allSets().filter(s=>!subjects || subjects.includes(s.subject)).forEach(s=>{
+    const k=s.examYear+'-'+s.examRound;
+    if(!map.has(k)) map.set(k,{key:k,year:s.examYear,round:s.examRound,subjects:new Set(),sample:true});
+    const r=map.get(k); r.subjects.add(s.subject); if(!s.sample) r.sample=false;
+  });
+  return [...map.values()].sort((a,b)=>b.year-a.year||b.round-a.round);
+}
+function roundQuestions(subject, key){
+  const out=[]; allSets().filter(s=>s.subject===subject && (s.examYear+'-'+s.examRound)===key)
+    .forEach(s=>s.questions.slice().sort((a,b)=>a.id-b.id).forEach(q=>out.push(decorate(q,s))));
+  return out;
+}
+/* 지문 묶음 키: 공식 기출은 [a～b] 묶음 id, 텍스트 문항은 지문 내용 */
+const groupKey = q => q.group || (q.passage||'').trim();
+/* 표시 번호: 원본 PDF를 보며 푸는 교시는 원래 번호, 그 외에는 시험지 내 순번 */
+const qLabel = (p, q, i) => p.pdf ? (q.no||i+1) : i+1;
+/* 랜덤 추출: 같은 지문을 공유하는 문항은 한 묶음(unit)으로 함께 출제
+   scope: 'official' 공식 기출만 · 'db' 샘플·추가 문항만 · 'all' 모두 */
+function randomPick(subject, n, scope='db'){
+  const pool = scope==='official' ? officialPool(subject) : scope==='all' ? officialPool(subject).concat(poolOf(subject)) : poolOf(subject);
+  const seen=new Set();
+  const uniq=pool.filter(q=>{ const k=q.official?q.uid:q.passage+'§'+q.question; if(seen.has(k)) return false; seen.add(k); return true; });
+  const units=[], byPassage=new Map();
+  uniq.forEach(q=>{
+    const p=groupKey(q);
+    if(p){ if(!byPassage.has(p)){ const u=[]; byPassage.set(p,u); units.push(u); } byPassage.get(p).push(q); }
+    else units.push([q]);
+  });
+  shuffle(units);
+  const picked=[];
+  for(const u of units){ if(picked.length+u.length<=n) picked.push(...u); if(picked.length>=n) break; }
+  return picked;
+}
+
+/* =====================================================================
+   5. 홈 (시험 생성)
+   ===================================================================== */
+const home = { subjects:new Set(['국어']), method:'random', mode:'cbt' };
+function renderHome(){
+  const st=dbStats();
+  const offR=officialRounds();
+  const offQ=SUBJECTS.reduce((a,s)=>a+officialPool(s.name).length,0);
+  $('#dbChips').innerHTML = (offR.length?`<span class="chip-stat">📄 공식 원본 <b>${offR.length}회차</b> (${offR[offR.length-1]} ~ ${offR[0]})</span>`:'') +
+    (offQ?`<span class="chip-stat">기출 문항 이미지 <b>${offQ.toLocaleString()}문항</b></span>`:'') +
+    `<span class="chip-stat">텍스트 DB <b>${Object.values(st).reduce((a,b)=>a+b,0)}문항</b></span>` +
+    SUBJECTS.map(s=>`<span class="chip-stat">${s.icon} ${s.name}<b>${st[s.name]}</b></span>`).join('');
+  const all = home.subjects.size===SUBJECTS.length;
+  const offCnt=Object.fromEntries(SUBJECTS.map(s=>[s.name, officialPool(s.name).length]));
+  $('#subjGrid').innerHTML = SUBJECTS.map(s=>`<button class="subj ${home.subjects.has(s.name)?'on':''}" data-subj="${s.name}">
+      <span class="si">${s.icon}</span><span class="sn">${s.period}교시 ${s.name}</span><span class="sm">${s.n}문항 · 기출 ${offCnt[s.name]} · 샘플 ${st[s.name]}</span></button>`).join('') +
+    `<button class="subj full ${all?'on':''}" data-subj="__all"><span class="si">🗂</span><span><span class="sn">전과목 모의고사 세트 (1~7교시)</span><br><span class="sm">국어 → 수학 → 영어 → 사회 → 과학 → 한국사 → 도덕 순서로 연속 응시 · 평균/과락 합격 판정</span></span></button>`;
+  $$('#methodCards .ocard').forEach(b=>b.classList.toggle('on', b.dataset.method===home.method));
+  $$('#modeCards .ocard').forEach(b=>b.classList.toggle('on', b.dataset.mode===home.mode));
+  $('#roundRow').classList.toggle('hidden', home.method==='random');
+  $('#scopeRow').classList.toggle('hidden', home.method!=='random');
+  const hasOffQ=Object.keys(OFFICIAL_Q).length>0;
+  $$('#scopeSel option').forEach(o=>{ if(o.value!=='db') o.disabled=!hasOffQ; });
+  if(!hasOffQ) $('#scopeSel').value='db';
+  $('#timeRow').classList.toggle('hidden', home.mode!=='cbt');
+  const subs=[...home.subjects];
+  const rounds = home.method==='official'
+    ? officialRounds().map(k=>{ const [year,round]=k.split('-').map(Number); return {key:k,year,round,subjects:new Set(Object.keys(OFFICIAL_KEYS[k])),official:true}; })
+    : roundList(subs);
+  const prev=$('#roundSel').value;
+  $('#roundSel').innerHTML = (home.method==='official' && rounds.length ? '<option value="__rand">🎲 과목별 무작위 회차 (매번 다른 실제 기출)</option>' : '') +
+    (rounds.length ? rounds.map(r=>`<option value="${r.key}">${r.year}년도 제${r.round}회 고졸 검정고시${r.official?' · 공식 원본':r.sample?' · 내장 샘플':''} (${r.subjects.size}과목)</option>`).join('') : '<option value="">선택한 과목의 회차가 없습니다</option>');
+  if([...$('#roundSel').options].some(o=>o.value===prev)) $('#roundSel').value=prev;
+  const ordered=SUBJECTS.filter(s=>home.subjects.has(s.name));
+  const qn=ordered.reduce((a,s)=>a+s.n,0);
+  const modeName={cbt:'실전 CBT',practice:'연습 모드',print:'종이 시험지 인쇄'}[home.mode];
+  $('#summary').innerHTML = ordered.length
+    ? `<b>${ordered.map(s=>s.name).join(' · ')}</b> ${ordered.length}과목 · 최대 <b>${qn}</b>문항 · ${{random:'🎲 무한 랜덤',official:'📄 공식 기출 원본',round:'📅 DB 회차'}[home.method]} · <b>${modeName}</b>`
+    : '과목을 하나 이상 선택하세요.';
+  $('#btnStart').disabled = !ordered.length || (home.method!=='random' && !rounds.length);
+}
+$('#subjGrid').addEventListener('click', e=>{
+  const b=e.target.closest('[data-subj]'); if(!b) return;
+  const n=b.dataset.subj;
+  if(n==='__all'){ if(home.subjects.size===SUBJECTS.length) home.subjects=new Set(['국어']); else home.subjects=new Set(SUBJECTS.map(s=>s.name)); }
+  else if(home.subjects.has(n)){ if(home.subjects.size>1) home.subjects.delete(n); }
+  else home.subjects.add(n);
+  renderHome();
+});
+$('#methodCards').addEventListener('click', e=>{ const b=e.target.closest('[data-method]'); if(b){ home.method=b.dataset.method; renderHome(); } });
+$('#modeCards').addEventListener('click', e=>{ const b=e.target.closest('[data-mode]'); if(b){ home.mode=b.dataset.mode; renderHome(); } });
+$('#btnStart').addEventListener('click', ()=>{
+  const cfg={subjects:SUBJECTS.filter(s=>home.subjects.has(s.name)).map(s=>s.name), method:home.method, roundKey:$('#roundSel').value, mode:home.mode, time:$('#timeSel').value, scope:$('#scopeSel').value};
+  const ex=createExam(cfg);
+  if(!ex.papers.length){ toast('출제할 문항이 없습니다. 기출 DB를 확인하세요.'); return; }
+  const short=ex.papers.filter(p=>p.questions.length<SUBJ[p.subject].n);
+  const go=()=>{ if(cfg.mode==='print') openPrint(ex, cfg); else beginExam(ex); };
+  if(short.length){
+    modal('문항 수 안내', `DB 문항이 부족하여 다음 과목은 표준 문항 수보다 적게 출제됩니다.<br><br>${short.map(p=>`• ${p.subject}: ${p.questions.length} / ${SUBJ[p.subject].n}문항`).join('<br>')}<br><br><span class="muted">점수는 100점 만점으로 환산됩니다.</span>`,
+      [{label:'취소'},{label:'계속',cls:'pri',onClick:go}]);
+  } else go();
+});
+
+/* =====================================================================
+   6. 시험 생성
+   ===================================================================== */
+function limitFor(subject, t){ if(t==='real') return SUBJ[subject].real*60; return (parseInt(t)||0)*60; }
+function makePaper(subject, qs, timeSec){
+  return {subject, period:SUBJ[subject].period, questions:qs, answers:{}, flags:{}, revealed:{}, timeLimit:timeSec, remain:timeSec, elapsed:0, submitted:false, correct:0, score:0};
+}
+function createExam(cfg){
+  const papers=[];
+  cfg.subjects.forEach(name=>{
+    let qs;
+    if(cfg.method==='official'){
+      const keys=officialRounds().filter(k=>OFFICIAL_KEYS[k][name]);
+      const key = cfg.roundKey==='__rand' ? keys[Math.floor(Math.random()*keys.length)] : cfg.roundKey;
+      qs = key ? officialQuestions(name, key) : [];
+    } else qs = cfg.method==='random' ? randomPick(name, SUBJ[name].n, cfg.scope) : roundQuestions(name, cfg.roundKey);
+    if(!qs.length) return;
+    const p=makePaper(name, qs, cfg.mode==='cbt'? limitFor(name,cfg.time) : 0);
+    if(cfg.method==='official') setPaperSource(p);
+    papers.push(p);
+  });
+  let title;
+  if(cfg.method==='random'){
+    const no=store.get('ged_serial',0)+1; store.set('ged_serial',no);
+    title=`AI 무한 랜덤 모의고사 제${no}회`;
+  } else if(cfg.method==='official' && cfg.roundKey==='__rand'){
+    title='공식 기출 랜덤 회차 모의고사';
+  } else {
+    const [y,r]=cfg.roundKey.split('-'); title=`${y}년도 제${r}회 고졸 검정고시`;
+  }
+  return {id:Date.now(), title, mode:cfg.mode, method:cfg.method, papers, cur:0};
+}
+function examFromQuestions(title, qs, mode){
+  const by={}; qs.forEach(q=>{ (by[q.subject]=by[q.subject]||[]).push(q); });
+  const papers=SUBJECTS.filter(s=>by[s.name]).map(s=>{ const p=makePaper(s.name, by[s.name], 0); setPaperSource(p); return p; });
+  return {id:Date.now(), title, mode, method:'notes', papers, cur:0};
+}
+/* 한 회차 공식 기출로만 이뤄진 교시: 출처 표시, 문항 이미지가 없으면 원본 PDF 보기 모드 */
+function setPaperSource(p){
+  const qs=p.questions, q0=qs[0];
+  if(!q0 || !q0.official || qs.some(q=>q.pdf!==q0.pdf)) return;
+  p.source=`${q0.year}년 제${q0.round}회`; p.pdfLink=q0.pdf;
+  if(qs.some(q=>!q.img)) p.pdf=q0.pdf;
+}
+
+/* =====================================================================
+   7. CBT / 연습 응시
+   ===================================================================== */
+let exam=null, timerId=null;
+const curPaper = () => exam && exam.papers[exam.cur];
+function beginExam(ex){ exam=ex; exam.cur=0; show('exam'); renderPaper(); startTimer(); }
+
+function passageRuns(qs){
+  const runs={}; let i=0;
+  while(i<qs.length){
+    const p=groupKey(qs[i]); let j=i;
+    if(p){ while(j+1<qs.length && groupKey(qs[j+1])===p) j++; runs[i]={end:j, multi:j>i}; for(let k=i+1;k<=j;k++) runs[k]={cont:true}; }
+    i=j+1;
+  }
+  return runs;
+}
+function renderPaper(){
+  const p=curPaper(), s=SUBJ[p.subject];
+  p._runs=passageRuns(p.questions);
+  $('#ebMode').textContent = exam.mode==='cbt' ? '실전 CBT' : '연습 모드';
+  $('#ebTitle').textContent = exam.title;
+  $('#ebSub').innerHTML = exam.papers.map((x,i)=>`<span class="pchip ${i===exam.cur?'cur':''} ${x.submitted?'done':''}">${x.submitted?'✓ ':''}${SUBJ[x.subject].period}교시 ${x.subject}</span>`).join('');
+  const last = exam.cur===exam.papers.length-1;
+  $('#btnSubmit').textContent = exam.mode==='cbt' ? (last?'답안 제출':'제출 · 다음 교시') : (last?'풀이 종료 · 결과':'다음 교시 ▶');
+  $('#omrSubj').textContent = `${s.period}교시 ${p.subject}`;
+  const head=`<div class="paper-title"><span class="ptag">제${s.period}교시</span><h2>${p.subject}</h2>${p.source?`<span class="off-tag">공식 원본 · ${p.source}</span>`:''}${p.pdfLink&&!p.pdf?`<a href="${encodeURI(p.pdfLink)}" target="_blank" rel="noopener" style="font-size:13px">📄 원본 PDF</a>`:''}<span class="muted">${p.questions.length}문항 · 문항당 ${ptsOf(p.questions.length)}점${exam.mode==='practice'?(p.pdf?' · OMR에 표기하면 바로 채점됩니다':' · 보기를 고르면 바로 채점됩니다'):''}</span></div>`;
+  $('#qList').innerHTML = head + (p.pdf
+    ? `<div class="pdfbox"><iframe src="${encodeURI(p.pdf)}#view=FitH&toolbar=1" title="${p.subject} 원본 시험지"></iframe>
+        <div class="pdfbar"><span>문제는 원본 시험지에서 풀고, 답은 오른쪽 OMR 카드에 표기하세요.${p.questions.length<SUBJ[p.subject].n?' (오답 다시 풀기: OMR의 번호가 원본 문항 번호입니다)':''}</span>
+        <span>시험지가 보이지 않으면 <a href="${encodeURI(p.pdf)}" target="_blank" rel="noopener">새 탭에서 열기</a> · 파일이 없으면 <code>node --use-system-ca tools/download_gumsi.mjs</code> 실행</span></div></div>`
+    : p.questions.map((q,i)=>groupHead(p,i)+cardHTML(i)).join(''));
+  $('#omrBody').innerHTML = p.questions.map((q,i)=>omrRowHTML(i)).join('');
+  updateOmrFoot(); updateTimer(); window.scrollTo(0,0);
+}
+/* 지문 묶음 안내문·본문 (공식 기출은 이미지, 텍스트 문항은 지문 상자) */
+const groupInstr = q => q.groupInstr || '다음 글을 읽고 물음에 답하시오.';
+function groupBody(q){
+  if(q.groupImg) return `<img class="qimg" src="${encodeURI(q.groupImg)}" style="width:${q.groupSize?.[0]*0.75||600}px" alt="지문">`;
+  return q.passage ? `<div class="passage">${rich(q.passage)}</div>` : '';
+}
+function groupHead(p,i){
+  const r=p._runs[i]; if(!r || r.cont || !r.multi) return '';
+  return `<div class="grp"><div class="grp-h">[${i+1}~${r.end+1}] ${esc(groupInstr(p.questions[i]))}</div>${groupBody(p.questions[i])}</div>`;
+}
+function cardHTML(i){
+  const p=curPaper(), q=p.questions[i], r=p._runs[i];
+  const mine=p.answers[i], rev=exam.mode==='practice' && p.revealed[i], flag=p.flags[i];
+  const single = r && !r.cont && !r.multi;
+  const opts=q.options.map((o,k)=>{
+    const n=k+1; let cls='';
+    if(rev){ if(isRight(q,n)) cls='right'; else if(n===mine) cls='wrong'; }
+    else if(n===mine) cls='sel';
+    return `<button class="opt ${cls}" data-q="${i}" data-o="${n}" ${rev?'disabled':''}><span class="circ">${CIRC[k]}</span><span>${q.official?'':rich(o)}</span></button>`;
+  }).join('');
+  const ok=isRight(q,mine);
+  const ex = rev ? `<div class="expl ${ok?'ok':'ng'}"><span class="tag">${ok?'⭕ 정답입니다!':'❌ 오답입니다.'}</span>정답 ${ansText(q)}<div style="margin-top:6px">${rich(q.explanation||(q.official?`${q.year}년 제${q.round}회 ${q.subject} ${q.no}번 공식 기출 문항입니다.`:'해설이 등록되지 않은 문항입니다.'))}</div></div>` : '';
+  const stem = q.img
+    ? `<img class="qimg" src="${encodeURI(q.img)}" style="width:${q.size?.[0]*0.75||600}px" alt="${esc(q.question)}">`
+    : rich(q.question) + (q.official ? ` <a href="${encodeURI(q.pdf)}" target="_blank" rel="noopener" style="font-size:13px;font-weight:400">📄 원본 열기</a>` : '');
+  const singleHead = single ? (q.img ? `<div class="grp-h" style="margin-top:8px">${esc(groupInstr(q))}</div>${groupBody(q)}` : groupBody(q)) : '';
+  return `<article class="qcard ${flag?'flagged':''}" id="q-${i}">
+    ${q.img?singleHead:''}
+    <div class="qhead"><span class="qnum">${i+1}.</span><div class="qstem">${stem}</div><button class="flagbtn ${flag?'on':''}" data-flag="${i}">${flag?'★ 검토':'☆ 검토'}</button></div>
+    ${q.img?'':singleHead}
+    <div class="opts ${q.img?'row4':''}">${opts}</div>${ex}
+    ${q.official&&q.img?`<div class="qsrc">${q.year}년 제${q.round}회 ${q.subject} ${q.no}번</div>`:''}</article>`;
+}
+function omrRowHTML(i){
+  const p=curPaper(), q=p.questions[i], mine=p.answers[i];
+  const rev = exam.mode==='practice' && p.revealed[i];
+  const st = rev ? (isRight(q,mine)?'ok':'ng') : '';
+  return `<div class="omr-row ${p.flags[i]?'flag':''} ${st}" id="omr-${i}"><span class="on-num" data-goto="${i}">${qLabel(p,q,i)}</span>${q.options.map((_,k)=>`<span class="bub ${mine===k+1?'on':''} ${rev&&isRight(q,k+1)?'ans':''}" data-q="${i}" data-o="${k+1}">${k+1}</span>`).join('')}</div>`;
+}
+function refreshQ(i){
+  const c=document.getElementById('q-'+i); if(c) c.outerHTML=cardHTML(i);
+  const r=document.getElementById('omr-'+i); if(r) r.outerHTML=omrRowHTML(i);
+  updateOmrFoot();
+}
+function updateOmrFoot(){
+  const p=curPaper(); const n=p.questions.length;
+  const done=Object.keys(p.answers).length, fl=Object.values(p.flags).filter(Boolean).length;
+  let extra='';
+  if(exam.mode==='practice'){ const c=p.questions.filter((q,i)=>p.revealed[i]&&isRight(q,p.answers[i])).length; extra=` · 정답 <b style="color:var(--ok)">${c}</b>`; }
+  $('#omrFoot').innerHTML = `<div>답안 표기 <b>${done}</b> / ${n} · 검토 <b style="color:#b26a00">${fl}</b>${extra}</div><div class="bar"><i style="width:${done/n*100}%"></i></div>`;
+}
+function choose(i,o){
+  const p=curPaper(); if(!p || p.submitted) return;
+  if(exam.mode==='practice'){ if(p.revealed[i]) return; p.answers[i]=o; p.revealed[i]=true; }
+  else p.answers[i]=o;
+  refreshQ(i);
+}
+$('#qList').addEventListener('click', e=>{
+  const f=e.target.closest('[data-flag]'); if(f){ const i=+f.dataset.flag, p=curPaper(); p.flags[i]=!p.flags[i]; refreshQ(i); return; }
+  const o=e.target.closest('.opt[data-q]'); if(o) choose(+o.dataset.q, +o.dataset.o);
+});
+$('#omrBody').addEventListener('click', e=>{
+  const b=e.target.closest('.bub'); if(b){ choose(+b.dataset.q, +b.dataset.o); return; }
+  const g=e.target.closest('[data-goto]'); if(g){ document.getElementById('q-'+g.dataset.goto)?.scrollIntoView({behavior:'smooth',block:'start'}); if(!curPaper().pdf) $('#omr').classList.remove('open'); }
+});
+$('#btnOmrToggle').addEventListener('click', ()=>$('#omr').classList.toggle('open'));
+
+function startTimer(){
+  stopTimer();
+  timerId=setInterval(()=>{
+    const p=curPaper(); if(!p || p.submitted) return;
+    p.elapsed++;
+    if(exam.mode==='cbt' && p.timeLimit){ p.remain--; if(p.remain<=0){ p.remain=0; updateTimer(); submitPaper(true); return; } }
+    updateTimer();
+  },1000);
+}
+function stopTimer(){ if(timerId){ clearInterval(timerId); timerId=null; } }
+function updateTimer(){
+  const p=curPaper(); const el=$('#ebTimer');
+  if(exam.mode==='cbt' && p.timeLimit){ el.textContent='⏱ '+mmss(p.remain); el.classList.toggle('warn', p.remain<=300); }
+  else { el.textContent='⏱ '+mmss(p.elapsed); el.classList.remove('warn'); }
+}
+function grade(p){
+  p.correct=p.questions.filter((q,i)=>isRight(q,p.answers[i])).length;
+  p.score=Math.round(p.correct/p.questions.length*100);
+}
+function submitPaper(auto){
+  const p=curPaper(); if(!p || p.submitted) return;
+  const doSubmit=()=>{
+    p.submitted=true; grade(p); stopTimer();
+    if(exam.cur<exam.papers.length-1){
+      const nx=exam.papers[exam.cur+1];
+      modal(auto?'⏰ 시험 시간 종료':`${p.period}교시 ${p.subject} 종료`,
+        `${auto?'제한 시간이 끝나 답안이 자동 제출되었습니다.<br>':''}다음은 <b>제${nx.period}교시 ${nx.subject}</b>입니다. 준비되면 시작하세요.<br><span class="muted">${exam.mode==='cbt'?'점수는 모든 교시가 끝난 뒤 공개됩니다.':''}</span>`,
+        [{label:'결과 바로 보기', onClick:finishExam},{label:`${nx.period}교시 시작 ▶`, cls:'pri', onClick:()=>{ exam.cur++; renderPaper(); startTimer(); }}]);
+    } else {
+      if(auto) modal('⏰ 시험 시간 종료','제한 시간이 끝나 답안이 자동 제출되었습니다.',[{label:'결과 보기',cls:'pri',onClick:finishExam}]);
+      else finishExam();
+    }
+  };
+  if(auto){ doSubmit(); return; }
+  const n=p.questions.length, done=Object.keys(p.answers).length, fl=Object.values(p.flags).filter(Boolean).length;
+  const warn = (n-done? `<br>⚠️ 답을 표기하지 않은 문항이 <b>${n-done}개</b> 있습니다.`:'') + (fl? `<br>★ 검토 표시한 문항이 <b>${fl}개</b> 있습니다.`:'');
+  modal(exam.mode==='cbt'?'답안을 제출하시겠습니까?':'이 교시 풀이를 마칠까요?', `${p.period}교시 ${p.subject} · ${done}/${n}문항 표기${warn}<br><br><span class="muted">제출 후에는 답을 바꿀 수 없습니다.</span>`,
+    [{label:'계속 풀기'},{label:'제출',cls:'pri',onClick:doSubmit}]);
+}
+$('#btnSubmit').addEventListener('click', ()=>submitPaper(false));
+$('#btnQuit').addEventListener('click', ()=>{
+  modal('시험을 중단할까요?','지금까지 표기한 답안은 저장되지 않습니다.',[{label:'계속 풀기'},{label:'채점하고 나가기',onClick:()=>{ exam.papers.forEach(p=>{ if(!p.submitted){ p.submitted=true; grade(p); } }); stopTimer(); finishExam(); }},{label:'그냥 나가기',cls:'danger',onClick:()=>{ stopTimer(); exam=null; show('home'); }}]);
+});
+
+/* =====================================================================
+   8. 채점 결과 & 오답노트
+   ===================================================================== */
+let lastResult=null, rvFilter='wrong';
+function snapshot(q){
+  const keys=['uid','id','no','official','pdf','img','size','group','groupInstr','groupImg','groupSize','optText','subject','year','round','sample','passage','question','options','answer','explanation'];
+  return Object.fromEntries(keys.filter(k=>q[k]!==undefined).map(k=>[k,q[k]]));
+}
+function finishExam(){
+  stopTimer();
+  exam.papers.forEach(p=>{ if(!p.submitted){ p.submitted=true; grade(p); } });
+  const notes=store.get('ged_notes',[]); const map=new Map(notes.map(n=>[n.uid,n]));
+  exam.papers.forEach(p=>p.questions.forEach((q,i)=>{
+    if(!isRight(q,p.answers[i])){
+      const n=map.get(q.uid);
+      if(n){ n.count++; n.my=p.answers[i]||0; n.date=Date.now(); }
+      else map.set(q.uid,{uid:q.uid,q:snapshot(q),my:p.answers[i]||0,count:1,date:Date.now()});
+    } else if(exam.method==='notes') map.delete(q.uid);
+  }));
+  store.set('ged_notes',[...map.values()]);
+  const hist=store.get('ged_history',[]);
+  hist.unshift({date:Date.now(),title:exam.title,mode:exam.mode,scores:exam.papers.map(p=>({subject:p.subject,score:p.score,correct:p.correct,n:p.questions.length}))});
+  store.set('ged_history',hist.slice(0,50));
+  lastResult=exam; exam=null; rvFilter='wrong';
+  renderResult(); show('result');
+}
+function statusOf(score){ return score>=60?['과목 합격','ok']:score>=40?['60점 미달','warn']:['과락','bad']; }
+function renderResult(){
+  const ex=lastResult, ps=ex.papers;
+  const avg=ps.reduce((a,p)=>a+p.score,0)/ps.length;
+  const fails=ps.filter(p=>p.score<40);
+  const full=ps.length===SUBJECTS.length;
+  let vc, head, sub;
+  if(full){
+    const pass=avg>=60 && !fails.length;
+    vc=pass?'pass':'fail';
+    head=pass?'🎉 최종 합격권입니다!':'불합격권입니다';
+    sub=pass?'전 과목 평균 60점 이상, 40점 미만 과락 과목 없음':(fails.length?`과락(40점 미만) ${fails.length}과목: ${fails.map(p=>p.subject).join(', ')}`:'')+(avg<60?`${fails.length?' · ':''}평균 60점 미달`:'');
+  } else {
+    const passed=ps.filter(p=>p.score>=60).length;
+    vc = ps.length===1 ? (ps[0].score>=60?'pass':'fail') : 'info';
+    head = ps.length===1 ? (ps[0].score>=60?`🎉 ${ps[0].subject} 과목 합격권`:`${ps[0].subject} ${ps[0].score<40?'과락':'과목 합격 기준 미달'}`) : `${ps.length}과목 중 ${passed}과목 합격권`;
+    sub='과목 합격 기준 60점 · 전과목 응시 시 평균 60점 이상 & 과락(40점 미만) 없으면 최종 합격';
+  }
+  const totalTime=ps.reduce((a,p)=>a+p.elapsed,0);
+  const rows=ps.map(p=>{ const [t,c]=statusOf(p.score); const col=c==='ok'?'var(--ok)':c==='warn'?'var(--warn)':'var(--bad)';
+    return `<tr><td>${p.period}교시</td><td class="l"><b>${p.subject}</b>${p.source?` <span class="muted" style="font-size:12px">${p.source}</span>`:''}</td><td>${p.correct} / ${p.questions.length}</td><td><b>${p.score}</b>점</td>
+      <td style="min-width:120px"><div class="sbar"><i style="width:${p.score}%;background:${col}"></i></div></td><td><span class="badge ${c}">${t}</span></td><td class="muted">${mmss(p.elapsed)}</td></tr>`; }).join('');
+  const wrongTotal=ps.reduce((a,p)=>a+(p.questions.length-p.correct),0);
+  const tabs=[['wrong',`오답만 (${wrongTotal})`],['all','전체 문항']].concat(ps.length>1?ps.map(p=>['s:'+p.subject,p.subject]):[]);
+  $('#resultWrap').innerHTML = `
+    <div class="verdict ${vc}">
+      <div class="row" style="justify-content:space-between;align-items:flex-end">
+        <div><div style="font-size:13px;opacity:.85">${esc(ex.title)} · ${ex.mode==='cbt'?'실전 CBT':'연습 모드'}</div><h2>${head}</h2><p>${sub}</p></div>
+        <div style="text-align:right"><div style="font-size:13px;opacity:.85">${ps.length>1?'평균':'점수'}</div><div class="big">${avg.toFixed(ps.length>1?1:0)}<span style="font-size:18px">점</span></div><div style="font-size:12px;opacity:.85">총 소요 ${mmss(totalTime)}</div></div>
+      </div>
+    </div>
+    <div class="card"><h3>📊 과목별 성적표</h3><div style="overflow-x:auto"><table class="tbl"><tr><th>교시</th><th class="l">과목</th><th>정답</th><th>점수</th><th>그래프 (점선 40점)</th><th>판정</th><th>소요</th></tr>${rows}</table></div>
+      <div class="row" style="margin-top:14px">
+        <button class="btn pri" id="btnRetryWrong" ${wrongTotal?'':'disabled'}>✏️ 틀린 문제 다시 풀기</button>
+        <button class="btn" id="btnResPrint">🖨 이 시험지 인쇄 (정답·해설 포함)</button>
+        <button class="btn" data-nav="notes">📒 오답노트 보기</button>
+        <button class="btn dark" data-nav="home">🎲 새 모의고사</button>
+      </div>
+      <p class="muted" style="font-size:12.5px;margin:10px 0 0">틀린 문항 ${wrongTotal}개가 오답노트에 자동 저장되었습니다.</p>
+    </div>
+    <div class="card"><h3>🔍 문항별 풀이 & 해설</h3><div class="tabs" id="rvTabs">${tabs.map(([k,l])=>`<button data-rv="${k}" class="${rvFilter===k?'on':''}">${l}</button>`).join('')}</div><div id="rvList"></div></div>`;
+  renderReview();
+  $('#rvTabs').onclick=e=>{ const b=e.target.closest('[data-rv]'); if(!b) return; rvFilter=b.dataset.rv; $$('#rvTabs button').forEach(x=>x.classList.toggle('on',x===b)); renderReview(); };
+  $('#btnRetryWrong').onclick=()=>{
+    const qs=[]; ps.forEach(p=>p.questions.forEach((q,i)=>{ if(!isRight(q,p.answers[i])) qs.push(q); }));
+    beginExam(examFromQuestions(ex.title+' · 오답 다시 풀기', qs, 'practice'));
+  };
+  $('#btnResPrint').onclick=()=>openPrint(ex,null);
+}
+function reviewCard(q, i, mine, extraTag){
+  const ok=isRight(q,mine);
+  if(q.official) return `<div class="rv">
+    <div class="rv-h"><b>${i+1}번</b><span class="badge gray">${q.subject}</span><span class="badge ${ok?'ok':'bad'}">${ok?'정답':mine?'오답':'미응답'}</span>
+      <span class="off-tag">공식 원본</span><span class="muted">${q.year}년 제${q.round}회 ${q.no}번</span>${extraTag||''}</div>
+    ${q.groupImg?`<details class="psg"><summary>지문 보기 · ${esc(groupInstr(q))}</summary>${groupBody(q)}</details>`:''}
+    ${q.img?`<img class="qimg" src="${encodeURI(q.img)}" style="width:${q.size?.[0]*0.7||560}px;margin:8px 0" alt="${esc(q.question)}">`:''}
+    <div class="rv-q">내 답 <b style="color:${ok?'var(--ok)':'var(--bad)'}">${mine?CIRC[mine-1]:'—'}</b> · 정답 <b style="color:var(--ok)">${ansText(q)}</b>${Array.isArray(q.answer)?' <span class="muted">(복수 정답)</span>':''}
+      · <a href="${encodeURI(q.pdf)}" target="_blank" rel="noopener">📄 원본 시험지</a></div>
+    ${officialExpl(q)?`<div class="expl" style="margin-top:10px"><span class="tag">해설</span>${rich(officialExpl(q))}</div>`:''}</div>`;
+  return `<div class="rv">
+    <div class="rv-h"><b>${i+1}번</b><span class="badge gray">${q.subject}</span><span class="badge ${ok?'ok':'bad'}">${ok?'정답':mine?'오답':'미응답'}</span>
+      <span class="muted">${q.year}년 ${q.round}회${q.sample?' · 샘플':''}</span>${extraTag||''}</div>
+    ${q.passage?`<details class="psg"><summary>지문 보기</summary><div class="passage">${rich(q.passage)}</div></details>`:''}
+    <div class="rv-q">${rich(q.question)}</div>
+    <ul class="rv-opts">${q.options.map((o,k)=>`<li class="${isRight(q,k+1)?'ans':''} ${k+1===mine&&!ok?'mine':''}">${CIRC[k]} ${rich(o)}${isRight(q,k+1)?' ✔':''}${k+1===mine&&!ok?' (내 답)':''}</li>`).join('')}</ul>
+    <div class="expl"><span class="tag">해설</span>${rich(q.explanation||'등록된 해설이 없습니다.')}</div></div>`;
+}
+function renderReview(){
+  const out=[];
+  lastResult.papers.forEach(p=>{
+    if(rvFilter.startsWith('s:') && rvFilter.slice(2)!==p.subject) return;
+    p.questions.forEach((q,i)=>{ const mine=p.answers[i]; if(rvFilter==='wrong' && isRight(q,mine)) return; out.push(reviewCard(q,i,mine)); });
+  });
+  $('#rvList').innerHTML = out.join('') || '<p class="muted">🎉 틀린 문항이 없습니다!</p>';
+}
+
+/* ---------- 오답노트 view ---------- */
+let noteFilter='all';
+function renderNotes(){
+  const notes=store.get('ged_notes',[]).sort((a,b)=>b.date-a.date);
+  const counts={}; notes.forEach(n=>counts[n.q.subject]=(counts[n.q.subject]||0)+1);
+  $('#noteCount').textContent=`(${notes.length}문항)`;
+  $('#noteTabs').innerHTML=[['all',`전체 ${notes.length}`]].concat(SUBJECTS.filter(s=>counts[s.name]).map(s=>[s.name,`${s.name} ${counts[s.name]}`]))
+    .map(([k,l])=>`<button data-nf="${k}" class="${noteFilter===k?'on':''}">${l}</button>`).join('');
+  const list=notes.filter(n=>noteFilter==='all'||n.q.subject===noteFilter);
+  $('#noteList').innerHTML = list.length ? list.map((n,i)=>reviewCard(n.q,i,n.my,
+      `<span class="badge warn">${n.count}회 틀림</span><span class="muted">${fmtDate(n.date)}</span><button class="btn sm danger" data-del="${esc(n.uid)}" style="margin-left:auto">삭제</button>`)).join('')
+    : '<p class="muted">오답노트가 비어 있습니다. 모의고사를 채점하면 틀린 문항이 자동으로 저장됩니다.</p>';
+  $('#btnNoteRetry').disabled=$('#btnNotePrint').disabled=!list.length;
+  const hist=store.get('ged_history',[]);
+  $('#historyList').innerHTML = hist.length ? `<div style="overflow-x:auto"><table class="tbl"><tr><th>일시</th><th class="l">시험</th><th>모드</th><th class="l">과목별 점수</th><th>평균</th></tr>${hist.map(h=>{
+      const avg=h.scores.reduce((a,s)=>a+s.score,0)/h.scores.length;
+      return `<tr><td class="muted">${fmtDate(h.date)}</td><td class="l">${esc(h.title)}</td><td>${h.mode==='cbt'?'CBT':'연습'}</td><td class="l">${h.scores.map(s=>`${s.subject} <b style="color:${s.score<40?'var(--bad)':s.score>=60?'var(--ok)':'var(--warn)'}">${s.score}</b>`).join(' · ')}</td><td><b>${avg.toFixed(1)}</b></td></tr>`;}).join('')}</table></div>`
+    : '<p class="muted">아직 응시 기록이 없습니다.</p>';
+}
+function filteredNoteQs(){ return store.get('ged_notes',[]).filter(n=>noteFilter==='all'||n.q.subject===noteFilter).map(n=>n.q); }
+$('#noteTabs').addEventListener('click', e=>{ const b=e.target.closest('[data-nf]'); if(b){ noteFilter=b.dataset.nf; renderNotes(); } });
+$('#noteList').addEventListener('click', e=>{ const b=e.target.closest('[data-del]'); if(!b) return; store.set('ged_notes',store.get('ged_notes',[]).filter(n=>n.uid!==b.dataset.del)); renderNotes(); });
+$('#btnNoteRetry').addEventListener('click', ()=>{ const qs=filteredNoteQs(); if(qs.length) beginExam(examFromQuestions('오답노트 다시 풀기', shuffle(qs.slice()), 'practice')); });
+$('#btnNotePrint').addEventListener('click', ()=>{ const qs=filteredNoteQs(); if(qs.length) openPrint(examFromQuestions('오답노트 복습 시험지', qs, 'print'), null); });
+$('#btnNoteClear').addEventListener('click', ()=>modal('오답노트 전체 삭제','저장된 오답과 응시 기록을 모두 지울까요?',[{label:'취소'},{label:'오답만 삭제',cls:'danger',onClick:()=>{store.set('ged_notes',[]);renderNotes();}},{label:'기록까지 삭제',cls:'danger',onClick:()=>{store.set('ged_notes',[]);store.set('ged_history',[]);renderNotes();}}]));
+
+/* =====================================================================
+   9. 종이 시험지 인쇄 엔진
+   ===================================================================== */
+let printExam=null, printCfg=null, printBack='home', printToken=0;
+function openPrint(ex, cfg){
+  printBack = document.querySelector('.view.active')?.id.replace('view-','') || 'home';
+  if(printBack==='exam') printBack='home';
+  printExam=ex; printCfg=cfg;
+  $('#btnPrintRegen').classList.toggle('hidden', !(cfg && (cfg.method==='random' || cfg.roundKey==='__rand')));
+  show('print'); renderPrint();   // 화면에 보인 상태에서 높이를 재야 하므로 show 먼저
+}
+/* 원본 시험지(B4)의 문항 이미지를 A4 2단에 맞게 축소: 이미지 1px = 0.5pt (ZOOM 2) */
+const PRINT_SCALE=0.82, PT2MM=25.4/72, COL_MM=91;
+function printImg(src, size, maxW){
+  const [w,h]=size||[0,0];
+  if(!w) return `<img class="pq-img" src="${encodeURI(src)}" style="max-width:${maxW}mm" alt="">`;
+  let W=w/2*PT2MM*PRINT_SCALE, H=h/2*PT2MM*PRINT_SCALE;
+  if(W>maxW){ H*=maxW/W; W=maxW; }
+  return `<img class="pq-img" src="${encodeURI(src)}" style="width:${W.toFixed(1)}mm;height:${H.toFixed(1)}mm" alt="">`;
+}
+function optLayout(opts){
+  const max=Math.max(...opts.map(o=>o.length));
+  return max<=8 ? 'g4' : max<=20 ? 'g2' : '';
+}
+function printGroup(q, from, to){
+  const body = q.groupImg ? printImg(q.groupImg, q.groupSize, COL_MM) : q.passage ? `<div class="ppass">${rich(q.passage)}</div>` : '';
+  return `<div class="pgrp"><div class="pgrp-h">${to>from?`[${from}～${to}] `:''}${esc(groupInstr(q))}</div>${body}</div>`;
+}
+function printQ(q, label, single){
+  if(q.img) return `<div class="pq pq-i"><b class="pq-n">${label}.</b>${printImg(q.img, q.size, COL_MM-6)}</div>`;
+  return `<div class="pq"><div class="pq-stem"><b>${label}.</b> ${rich(q.question)}</div>${single&&q.passage?`<div class="ppass">${rich(q.passage)}</div>`:''}
+    <ol class="pq-opts ${optLayout(q.options)}">${q.options.map((o,k)=>`<li>${CIRC[k]} ${rich(o)}</li>`).join('')}</ol></div>`;
+}
+/* 한 교시의 인쇄 블록 목록 — 블록은 단·페이지 경계에서 절대 쪼개지지 않음 */
+function paperBlocks(p){
+  const runs=passageRuns(p.questions), out=[];
+  p.questions.forEach((q,i)=>{
+    const r=runs[i], lab=qLabel(p,q,i), single=r && !r.cont && !r.multi;
+    if(r && !r.cont && r.multi) out.push(printGroup(q, i+1, r.end+1));
+    // 지문이 하나뿐인 문항은 안내문·지문과 문항을 한 블록으로 묶음
+    if(single && q.img && (q.groupImg || q.groupInstr)) out.push(`<div class="blk">${printGroup(q,i+1,i+1)}${printQ(q,lab,false)}</div>`);
+    else out.push(printQ(q, lab, single));
+  });
+  return out;
+}
+function paperHeader(ex,p){
+  const s=SUBJ[p.subject], n=p.questions.length;
+  return `<div class="ph">
+      <div class="ph-row"><span class="ph-badge">제 ${s.period} 교시</span><span class="ph-exam">${esc(ex.title)}</span><span class="ph-type">고졸학력</span></div>
+      <div class="ph-subj">${spaced(p.subject)}</div>
+      <table class="idt"><tr><th>수험번호</th>${'<td></td>'.repeat(8)}<th>성 명</th><td class="nm"></td></tr></table>
+      <div class="ph-info">※ 문항 수 ${n}문항 · 문항당 ${ptsOf(n)}점 · 시험 시간 ${s.real}분 · 정답을 골라 OMR 답안지에 컴퓨터용 사인펜으로 표기하시오.${p.source?` · 출처: ${p.source} 고졸 검정고시`:''}</div>
+    </div>`;
+}
+const miniHeader = (left, right) => `<div class="ph-mini"><span>${left}</span><span>${right}</span></div>`;
+/* A4 페이지(2단)에 블록을 차례로 채움: 넘치면 다음 단 → 다음 페이지 */
+async function paginate(area, blocks, {first, later, foot, cls='', token}){
+  const pages=[]; let cols, ci;
+  const newPage=()=>{
+    const page=document.createElement('div');
+    page.className='sheet a4 '+cls;
+    // 바닥글은 측정 전에 미리 채워 둬야 단 높이가 나중에 줄지 않음
+    page.innerHTML=`${pages.length?later:first}<div class="pcols"><div class="pcol"></div><div class="pcol"></div></div><div class="sheet-foot">${esc(foot(pages.length+1, pages.length+1))}</div>`;
+    area.appendChild(page); pages.push(page);
+    cols=page.querySelectorAll('.pcol'); ci=0;
+  };
+  newPage();
+  for(const html of blocks){
+    if(token!==printToken) return;
+    const tpl=document.createElement('template'); tpl.innerHTML=html.trim();
+    const el=tpl.content.firstElementChild;
+    // 크기 정보가 없는 이미지는 로드 후에 높이를 잴 수 있음
+    await Promise.all([...el.querySelectorAll('img:not([style*="height"])')].map(img=>img.complete?0:new Promise(r=>{ img.onload=img.onerror=r; })));
+    for(;;){
+      const col=cols[ci]; col.appendChild(el);
+      if(col.scrollHeight<=col.clientHeight+1) break;
+      if(col.children.length===1){ fitBlock(col, el); break; }   // 빈 단에도 안 들어가는 긴 지문 → 축소
+      col.removeChild(el);
+      if(++ci>=cols.length) newPage();
+    }
+  }
+  pages.forEach((pg,i)=>{ pg.querySelector('.sheet-foot').textContent=foot(i+1, pages.length); });
+}
+/* 단 하나보다 큰 블록: 이미지 크기를 같은 비율로 줄여 단 높이에 맞춤 */
+function fitBlock(col, el){
+  const imgs=[...el.querySelectorAll('img')]; if(!imgs.length) return;
+  const imgH=imgs.reduce((a,i)=>a+i.getBoundingClientRect().height,0);
+  const f=Math.max(0.5, (col.clientHeight-(col.scrollHeight-imgH)-2)/imgH);
+  imgs.forEach(i=>{ const r=i.getBoundingClientRect(); i.style.width=`${r.width*f}px`; i.style.height=`${r.height*f}px`; });
+}
+function omrPages(ex){
+  const cols=[];
+  ex.papers.forEach(p=>{
+    for(let i=0;i<p.questions.length;i+=25){
+      const part=p.questions.slice(i,i+25);
+      cols.push({title:`${p.period}교시 ${p.subject}${p.questions.length>25?` (${i+1}~${i+part.length})`:''}`, labels:part.map((q,k)=>qLabel(p,q,i+k))});
+    }
+  });
+  const pages=[]; for(let i=0;i<cols.length;i+=7) pages.push(cols.slice(i,i+7));
+  return pages.map((pc,pi)=>`<div class="sheet a4 omr-sheet"><h2>OMR 답안지</h2>
+    <table class="idt" style="margin-bottom:6mm"><tr><th>시험명</th><td class="nm" style="width:70mm;padding:0 3mm">${esc(ex.title)}</td><th>수험번호</th>${'<td></td>'.repeat(8)}<th>성 명</th><td class="nm"></td></tr></table>
+    <div class="omr-wrap">${pc.map(c=>`<div class="omr-col"><h5>${c.title}</h5>${c.labels.map(l=>`<div class="omr-line"><span>${l}</span>${[1,2,3,4].map(k=>`<i>${k}</i>`).join('')}</div>`).join('')}</div>`).join('')}</div>
+    <div class="sheet-foot">OMR 답안지 · ${pi+1} / ${pages.length}</div></div>`).join('');
+}
+function answerBlocks(ex, withGrid, withExp){
+  const out=[];
+  if(withGrid) ex.papers.forEach(p=>{
+    const n=p.questions.length, rows=[];
+    for(let i=0;i<n;i+=10){
+      const ks=[]; for(let k=i;k<i+10;k++) ks.push(k);
+      rows.push(`<tr>${ks.map(k=>`<th>${k<n?qLabel(p,p.questions[k],k):''}</th>`).join('')}</tr><tr>${ks.map(k=>`<td>${k<n?ansText(p.questions[k]):''}</td>`).join('')}</tr><tr>${ks.map(k=>`<td class="mk">${k<n?'○ ×':''}</td>`).join('')}</tr>`);
+    }
+    out.push(`<div class="ans-block"><h4>제${p.period}교시 ${p.subject}${p.source?` <small>(${p.source} 공식 정답)</small>`:''}</h4>
+      <div class="ans-meta">문항당 ${ptsOf(n)}점 · 맞힌 개수 ____ / ${n} · 점수 ____ 점</div><table class="ansgrid">${rows.join('')}</table></div>`);
+  });
+  if(withExp) ex.papers.forEach(p=>{
+    if(!p.questions.some(q=>q.explanation)) return;
+    out.push(`<div class="exp-h">제${p.period}교시 ${p.subject} 상세 해설</div>`);
+    p.questions.forEach((q,i)=>out.push(`<div class="exp"><b>${qLabel(p,q,i)}. 정답 ${ansText(q)}</b> ${rich(q.explanation||(q.official?`${q.year}년 제${q.round}회 ${q.no}번 공식 기출 (해설 미등록)`:'해설 없음'))}</div>`));
+  });
+  return out;
+}
+async function renderPrint(){
+  const ex=printExam, token=++printToken, area=$('#printArea');
+  $('#printTitle').textContent=`${ex.title} · ${ex.papers.length}과목 · ${ex.papers.reduce((a,p)=>a+p.questions.length,0)}문항`;
+  area.innerHTML='<p style="color:#fff;text-align:center">A4 페이지 편집 중…</p>';
+  try{ await document.fonts.ready; }catch(e){}
+  if(token!==printToken) return;
+  area.innerHTML='';
+  for(const p of ex.papers){
+    const s=SUBJ[p.subject];
+    if(p.pdf){   // 문항 이미지가 없는 공식 기출: 원본 PDF로 인쇄 안내(이 페이지는 인쇄되지 않음)
+      area.insertAdjacentHTML('beforeend', `<div class="sheet a4 screen-only off-sheet">
+        <h2>제${s.period}교시 ${p.subject}</h2><p>${p.source} 고졸 검정고시 <b>공식 원본 시험지</b> (${p.questions.length}문항)</p>
+        <p><a class="btn pri lg" href="${encodeURI(p.pdf)}" target="_blank" rel="noopener">📄 원본 시험지 PDF 열기 · 인쇄</a></p>
+        <p class="muted" style="font-size:10pt">원본 시험지는 PDF 뷰어에서 따로 인쇄하세요. 이 안내 페이지는 인쇄되지 않습니다.</p></div>`);
+      continue;
+    }
+    await paginate(area, paperBlocks(p), {token,
+      first: paperHeader(ex,p),
+      later: miniHeader(`제${s.period}교시 ${p.subject}`, esc(ex.title)),
+      foot: (i,n)=>`제${s.period}교시 ${p.subject}  ${i} / ${n}`});
+    if(token!==printToken) return;
+  }
+  if($('#pOmr').checked) area.insertAdjacentHTML('beforeend', omrPages(ex));
+  const withGrid=$('#pAns').checked, withExp=$('#pExp').checked;
+  if(withGrid || withExp){
+    await paginate(area, answerBlocks(ex,withGrid,withExp), {token, cls:'answer-sheet',
+      first: `<div class="ans-title">정답 및 해설</div><div class="ans-sub">${esc(ex.title)} · ${ex.papers.map(p=>p.subject).join(' · ')}</div>`,
+      later: miniHeader('정답 및 해설', esc(ex.title)),
+      foot: (i,n)=>`정답 및 해설  ${i} / ${n}`});
+  }
+  if(token===printToken) $('#printTitle').textContent+=` · A4 ${area.querySelectorAll('.sheet:not(.screen-only)').length}쪽`;
+}
+['#pOmr','#pAns','#pExp'].forEach(id=>$(id).addEventListener('change',()=>printExam&&renderPrint()));
+$('#btnDoPrint').addEventListener('click',()=>window.print());
+$('#btnPrintBack').addEventListener('click',()=>show(printBack));
+$('#btnPrintRegen').addEventListener('click',()=>{ if(printCfg){ printExam=createExam(printCfg); renderPrint(); window.scrollTo(0,0); toast('새로운 랜덤 시험지를 생성했습니다.'); } });
+
+/* =====================================================================
+   10. 기출 DB 관리자
+   ===================================================================== */
+function normSubject(s){ const k=String(s||'').replace(/\s/g,''); return SUBJ_ALIAS[k] || SUBJ_ALIAS[String(s||'').trim()] || null; }
+function normalizeSets(data){
+  const arr = Array.isArray(data) ? data : (data && Array.isArray(data.sets)) ? data.sets : [data];
+  const sets=[], errs=[];
+  arr.forEach((s,si)=>{
+    if(!s || typeof s!=='object'){ errs.push(`#${si+1}: 회차 객체가 아닙니다.`); return; }
+    const subject=normSubject(s.subject);
+    if(!subject){ errs.push(`#${si+1}: 과목명 ‘${s.subject}’을(를) 인식할 수 없습니다.`); return; }
+    const year=parseInt(s.examYear)||new Date().getFullYear(), round=parseInt(s.examRound)||1;
+    const qs=[];
+    (Array.isArray(s.questions)?s.questions:[]).forEach((q,qi)=>{
+      const opts=(Array.isArray(q.options)?q.options:[]).map(o=>String(o).trim()).filter(Boolean);
+      const ans=parseInt(q.answer);
+      if(!q.question || opts.length<2 || !(ans>=1 && ans<=opts.length)){ errs.push(`${subject} ${year}-${round} ${q.id||qi+1}번: 발문/보기/정답 형식 오류로 건너뜀`); return; }
+      qs.push({id:parseInt(q.id)||qi+1, passage:String(q.passage||''), question:String(q.question), options:opts.slice(0,5), answer:ans, explanation:String(q.explanation||'')});
+    });
+    if(qs.length) sets.push({examYear:year, examRound:round, subject, questions:qs, source:'user'});
+    else errs.push(`${subject} ${year}-${round}: 유효한 문항이 없습니다.`);
+  });
+  return {sets, errs};
+}
+function parseText(txt){
+  const meta={subject:'',year:'',round:''}; const out=[]; let passage='', cur=null, mode=null;
+  const flush=()=>{ if(cur){ out.push({...cur, _s:meta.subject, _y:meta.year, _r:meta.round}); cur=null; } };
+  const circ={'①':1,'②':2,'③':3,'④':4,'⑤':5};
+  txt.replace(/\r/g,'').split('\n').forEach(raw=>{
+    const line=raw.trim(); if(!line) return; let m;
+    if((m=line.match(/^#?\s*과목\s*[:：]\s*(.+)$/))){ flush(); meta.subject=m[1].trim(); passage=''; mode=null; return; }
+    if((m=line.match(/^#?\s*연도\s*[:：]\s*(\d{4})/))){ flush(); meta.year=m[1]; return; }
+    if((m=line.match(/^#?\s*회차\s*[:：]\s*(\d+)/))){ flush(); meta.round=m[1]; return; }
+    if(/^지문\s*끝/.test(line)){ flush(); passage=''; mode=null; return; }
+    if((m=line.match(/^지문\s*[:：]\s*(.*)$/))){ flush(); passage=m[1]; mode='passage'; return; }
+    if((m=line.match(/^정답\s*[:：]\s*([①②③④⑤1-5])/))){ if(cur){ cur.answer=circ[m[1]]||+m[1]; } mode=null; return; }
+    if((m=line.match(/^해설\s*[:：]\s*(.*)$/))){ if(cur){ cur.explanation=m[1]; } mode='exp'; return; }
+    if((m=line.match(/^(\d{1,3})\s*\.\s*(.+)$/))){ flush(); cur={id:+m[1], passage, question:m[2], options:[], answer:0, explanation:''}; mode='q'; return; }
+    if(cur && /^[①②③④⑤]/.test(line)){
+      line.split(/(?=[①②③④⑤])/).map(x=>x.replace(/^[①②③④⑤]\s*/,'').trim()).filter(Boolean).forEach(o=>cur.options.push(o)); mode='opt'; return;
+    }
+    if(cur && (m=line.match(/^\(\s*([1-5])\s*\)\s*(.+)$/))){ cur.options.push(m[2]); mode='opt'; return; }
+    if(mode==='passage') passage+='\n'+line;
+    else if(cur && mode==='exp') cur.explanation+=' '+line;
+    else if(cur && mode==='q') cur.question+='\n'+line;
+    else if(cur && mode==='opt' && cur.options.length) cur.options[cur.options.length-1]+=' '+line;
+  });
+  flush();
+  const groups=new Map();
+  out.forEach(q=>{ const k=`${q._s}|${q._y}|${q._r}`; if(!groups.has(k)) groups.set(k,{subject:q._s,examYear:q._y,examRound:q._r,questions:[]}); const {_s,_y,_r,...rest}=q; groups.get(k).questions.push(rest); });
+  return [...groups.values()];
+}
+function parseAny(text){
+  const t=text.trim(); if(!t) return {sets:[],errs:['내용이 비어 있습니다.']};
+  if(t[0]==='{' || t[0]==='['){
+    try{ return normalizeSets(JSON.parse(t)); }catch(e){ return {sets:[],errs:['JSON 구문 오류: '+e.message]}; }
+  }
+  return normalizeSets(parseText(t));
+}
+function mergeUserSets(sets){
+  let added=0, dup=0;
+  sets.forEach(ns=>{
+    let ex=userSets.find(s=>s.subject===ns.subject && s.examYear===ns.examYear && s.examRound===ns.examRound);
+    if(!ex){ ex={...ns, questions:[], addedAt:Date.now()}; userSets.push(ex); }
+    ns.questions.forEach(q=>{
+      if(ex.questions.some(x=>x.question===q.question && x.passage===q.passage)){ dup++; return; }
+      let id=q.id; if(ex.questions.some(x=>x.id===id)) id=Math.max(0,...ex.questions.map(x=>x.id))+1;
+      ex.questions.push({...q,id}); added++;
+    });
+  });
+  userSets=userSets.filter(s=>s.questions.length);
+  const ok=store.set('ged_user_sets',userSets);
+  return {added,dup,ok};
+}
+function summarize(res){
+  const lines=res.sets.map(s=>`✔ ${s.examYear}년 ${s.examRound}회 ${s.subject}: ${s.questions.length}문항`);
+  return lines.concat(res.errs.map(e=>'✖ '+e)).join('\n');
+}
+function showMsg(el, text, ok){ el.innerHTML=`<div class="msg ${ok?'ok':'bad'}">${esc(text)}</div>`; }
+function importResult(res, el){
+  if(!res.sets.length){ showMsg(el, summarize(res)||'추가할 문항이 없습니다.', false); return; }
+  const r=mergeUserSets(res.sets);
+  showMsg(el, `${r.added}문항 추가 완료${r.dup?` (중복 ${r.dup}문항 제외)`:''}${r.ok?'':'\n⚠️ 브라우저 저장소에 저장하지 못했습니다(용량 초과 또는 비공개 모드). 새로고침 시 사라질 수 있습니다.'}\n\n`+summarize(res), true);
+  renderAdmin(); renderHome();
+}
+function renderAdmin(){
+  const rounds=roundList(null);
+  const head=`<tr><th class="l">과목</th><th>표준 문항</th><th>공식 원본<br>(PDF 회차)</th><th>내장 샘플</th><th>사용자 추가</th><th>텍스트 합계</th><th class="l">텍스트 수록 회차</th></tr>`;
+  const rows=SUBJECTS.map(s=>{
+    const b=BUILTIN.filter(x=>x.subject===s.name).reduce((a,x)=>a+x.questions.length,0);
+    const u=userSets.filter(x=>x.subject===s.name).reduce((a,x)=>a+x.questions.length,0);
+    const rs=rounds.filter(r=>r.subjects.has(s.name)).map(r=>`${String(r.year).slice(2)}-${r.round}`).join(', ');
+    const off=officialRounds().filter(k=>OFFICIAL_KEYS[k][s.name]).length;
+    return `<tr><td class="l">${s.icon} <b>${s.name}</b></td><td>${s.n}</td><td>${off}</td><td>${b}</td><td>${u}</td><td><b>${b+u}</b></td><td class="l muted" style="font-size:12.5px">${rs}</td></tr>`;
+  }).join('');
+  $('#dbTable').innerHTML=head+rows;
+  const list=userSets.slice().sort((a,b)=>b.examYear-a.examYear||b.examRound-a.examRound||SUBJ[a.subject].period-SUBJ[b.subject].period);
+  $('#userSetList').innerHTML = list.length ? `<div style="overflow-x:auto"><table class="tbl"><tr><th>연도</th><th>회차</th><th class="l">과목</th><th>문항 수</th><th></th></tr>${list.map(s=>{
+      const i=userSets.indexOf(s);
+      return `<tr><td>${s.examYear}</td><td>제${s.examRound}회</td><td class="l">${s.subject}</td><td>${s.questions.length}</td><td><button class="btn sm danger" data-delset="${i}">삭제</button></td></tr>`;}).join('')}</table></div>`
+    : '<p class="muted">아직 추가된 회차가 없습니다. JSON 업로드나 텍스트 붙여넣기로 기출 문제를 추가해 보세요.</p>';
+}
+$('#userSetList').addEventListener('click', e=>{
+  const b=e.target.closest('[data-delset]'); if(!b) return; const s=userSets[+b.dataset.delset];
+  modal('회차 삭제', `${s.examYear}년 제${s.examRound}회 ${s.subject} (${s.questions.length}문항)을 삭제할까요?`, [{label:'취소'},{label:'삭제',cls:'danger',onClick:()=>{ userSets.splice(+b.dataset.delset,1); store.set('ged_user_sets',userSets); renderAdmin(); renderHome(); }}]);
+});
+async function handleFiles(files){
+  const all={sets:[],errs:[]};
+  for(const f of files){
+    try{ const r=parseAny(await f.text()); all.sets.push(...r.sets); all.errs.push(...r.errs.map(e=>`[${f.name}] ${e}`)); }
+    catch(e){ all.errs.push(`[${f.name}] 파일을 읽을 수 없습니다.`); }
+  }
+  importResult(all, $('#fileMsg'));
+}
+$('#fileIn').addEventListener('change', e=>{ handleFiles([...e.target.files]); e.target.value=''; });
+const drop=$('#drop');
+['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{ e.preventDefault(); drop.classList.add('over'); }));
+['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{ e.preventDefault(); drop.classList.remove('over'); }));
+drop.addEventListener('drop', e=>handleFiles([...e.dataTransfer.files]));
+$('#btnPastePreview').addEventListener('click', ()=>{ const r=parseAny($('#pasteIn').value); showMsg($('#pasteMsg'), (r.sets.length?`검사 결과 (아직 저장되지 않음)\n`:'')+(summarize(r)||'인식된 문항이 없습니다.'), r.sets.length>0); });
+$('#btnPasteSave').addEventListener('click', ()=>{ const r=parseAny($('#pasteIn').value); importResult(r, $('#pasteMsg')); if(r.sets.length) $('#pasteIn').value=''; });
+$('#btnTemplate').addEventListener('click', ()=>download('ged_template.json', JSON.stringify([{
+  examYear:2024, examRound:1, subject:'수학',
+  questions:[{id:1, passage:'', question:'두 다항식 A = x² + 3, B = 2x² − 1에 대하여 A + B는?', options:['3x² + 2','3x² + 4','x² + 2','2x² + 2'], answer:1, explanation:'A + B = (x² + 3) + (2x² − 1) = 3x² + 2 이므로 정답은 1번입니다.'}]
+}], null, 2)));
+$('#btnExport').addEventListener('click', ()=>{
+  if(!userSets.length){ toast('내보낼 사용자 DB가 없습니다.'); return; }
+  download(`ged_user_db_${new Date().toISOString().slice(0,10)}.json`, JSON.stringify(userSets.map(({source,addedAt,...s})=>s), null, 2));
+});
+$('#btnResetDb').addEventListener('click', ()=>modal('사용자 DB 초기화','직접 추가한 모든 기출 문항을 삭제합니다. (내장 샘플은 유지)',[{label:'취소'},{label:'초기화',cls:'danger',onClick:()=>{ userSets=[]; store.set('ged_user_sets',[]); renderAdmin(); renderHome(); toast('사용자 DB를 초기화했습니다.'); }}]));
+
+/* =====================================================================
+   11. 라우팅
+   ===================================================================== */
+function show(v){
+  $$('.view').forEach(e=>e.classList.toggle('active', e.id==='view-'+v));
+  $('#appHeader').classList.toggle('hidden', v==='exam' || v==='print');
+  $$('.nav button').forEach(b=>b.classList.toggle('on', b.dataset.nav===v));
+  if(v==='home') renderHome();
+  if(v==='notes') renderNotes();
+  if(v==='admin') renderAdmin();
+  window.scrollTo(0,0);
+}
+document.addEventListener('click', e=>{
+  const n=e.target.closest('[data-nav]'); if(!n) return;
+  e.preventDefault(); show(n.dataset.nav);
+});
+window.addEventListener('beforeunload', e=>{ if(exam){ e.preventDefault(); e.returnValue=''; } });
+
+renderHome();
+</script>
+</body>
+</html>
