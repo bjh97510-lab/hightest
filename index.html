@@ -278,6 +278,9 @@ table.ansgrid{border-collapse:collapse;width:100%;font-size:9.5pt;table-layout:f
   @page{size:A4;margin:0}
   html,body{background:#fff!important}
   .app-h,.print-toolbar,.view:not(#view-print),.toast,.modal-bg,.sheet.screen-only{display:none!important}
+  /* 브라우저 확장 프로그램(QR 코드 생성기 등)이 페이지에 끼워 넣은 요소는 인쇄하지 않음: 시험지 화면만 남김 */
+  body > *:not(#view-print), html > *:not(head):not(body){display:none!important}
+  #view-print > *:not(.print-area){display:none!important}
   #view-print{display:block!important}
   .print-area{padding:0;background:#fff;overflow:visible}
   .sheet{box-shadow:none;margin:0;width:210mm;break-after:page;page-break-after:always}
